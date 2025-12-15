@@ -172,6 +172,79 @@ app.get("/api/projects/list", (req, res) => {
 	});
 });
 
+// ----------------------------------- Editor helpers -----------------------------------
+const EDITOR_EXCLUDE = ["node_modules", ".git", ".turbo", ".next", "dist", "build"];
+
+function safeProjectPath(project, relPath = "") {
+	const base = path.resolve("./db/projects", project);
+	const target = path.resolve(base, relPath);
+	if (!target.startsWith(base)) {
+		throw new Error("invalid path");
+	}
+	return { base, target };
+}
+
+function walkFiles(dir, base) {
+	const entries = fs.readdirSync(dir, { withFileTypes: true });
+	let files = [];
+	for (const entry of entries) {
+		if (EDITOR_EXCLUDE.includes(entry.name)) continue;
+		const fullPath = path.join(dir, entry.name);
+		const relPath = path.relative(base, fullPath);
+		if (entry.isDirectory()) {
+			files = files.concat(walkFiles(fullPath, base));
+		} else {
+			files.push(relPath);
+		}
+	}
+	return files;
+}
+
+app.get("/api/editor/files", (req, res) => {
+	try {
+		const project = req.query.project;
+		if (!project) return res.status(400).json({ error: "project is required" });
+		const { base } = safeProjectPath(project);
+		if (!fs.existsSync(base)) return res.status(404).json({ error: "project not found" });
+		const files = walkFiles(base, base);
+		res.status(200).json({ files });
+	} catch (e) {
+		res.status(500).json({ error: e.message || "Failed to list files" });
+	}
+});
+
+app.get("/api/editor/file", (req, res) => {
+	try {
+		const project = req.query.project;
+		const filePath = req.query.path;
+		if (!project || !filePath)
+			return res.status(400).json({ error: "project and path are required" });
+		const { target } = safeProjectPath(project, filePath);
+		if (!fs.existsSync(target) || !fs.statSync(target).isFile()) {
+			return res.status(404).json({ error: "file not found" });
+		}
+		const content = fs.readFileSync(target, "utf8");
+		res.status(200).json({ content });
+	} catch (e) {
+		res.status(500).json({ error: e.message || "Failed to read file" });
+	}
+});
+
+app.post("/api/editor/file", (req, res) => {
+	try {
+		const { project, path: relPath, content } = req.body || {};
+		if (!project || !relPath || typeof content !== "string") {
+			return res.status(400).json({ error: "project, path, and content are required" });
+		}
+		const { target } = safeProjectPath(project, relPath);
+		fs.mkdirSync(path.dirname(target), { recursive: true });
+		fs.writeFileSync(target, content, "utf8");
+		res.status(200).json({ saved: true });
+	} catch (e) {
+		res.status(500).json({ error: e.message || "Failed to save file" });
+	}
+});
+
 app.post("/api/utils/transcribe", async (req, res) => {
 	const uid = Math.random().toString(36).slice(2, 11); // Generate a random unique ID
 	const tempFilePath = path.join(__dirname, "db/storage/temp", `${uid}.webm`);

@@ -25,6 +25,13 @@ import {
 	SignalIcon,
 	ClockIcon,
 } from "@heroicons/react/24/outline";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 
 type ProjectBudget = {
 	name: string;
@@ -69,6 +76,7 @@ const Settings: React.FC = () => {
 	const [loggingEnabled, setLoggingEnabled] = useState<boolean>(true);
 	const [alertingEnabled, setAlertingEnabled] = useState<boolean>(true);
 	const [killSwitchEnabled, setKillSwitchEnabled] = useState<boolean>(true);
+	const [themeChoice, setThemeChoice] = useState<"auto" | "dark" | "light" | "uv">("dark");
 
 	const projectBudgets = useMemo<ProjectBudget[]>(
 		() => [
@@ -251,6 +259,65 @@ const Settings: React.FC = () => {
 		100,
 		workspaceBudget ? (totals.spent / workspaceBudget) * 100 : 0,
 	);
+
+	useEffect(() => {
+		const applyTheme = (choice: typeof themeChoice) => {
+			const root = document.documentElement;
+			const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+			const resolved =
+				choice === "auto" ? (prefersDark ? "dark" : "light") : choice;
+
+			root.classList.remove("dark", "light", "uv");
+			if (resolved === "uv") {
+				root.classList.add("uv");
+				root.setAttribute("data-theme", "uv");
+			} else {
+				root.classList.add(resolved);
+				root.setAttribute("data-theme", resolved);
+			}
+			localStorage.setItem("cofounder-theme", choice);
+		};
+
+		// load saved preference on mount
+		const stored = localStorage.getItem("cofounder-theme") as
+			| "auto"
+			| "dark"
+			| "light"
+			| "uv"
+			| null;
+		if (stored) {
+			setThemeChoice(stored);
+			applyTheme(stored);
+		} else {
+			applyTheme(themeChoice);
+		}
+
+		const listener = () => {
+			if (themeChoice === "auto") applyTheme("auto");
+		};
+		window.matchMedia?.("(prefers-color-scheme: dark)")?.addEventListener("change", listener);
+
+		return () => {
+			window.matchMedia?.("(prefers-color-scheme: dark)")?.removeEventListener("change", listener);
+		};
+	}, []);
+
+	useEffect(() => {
+		const root = document.documentElement;
+		const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+		const resolved =
+			themeChoice === "auto" ? (prefersDark ? "dark" : "light") : themeChoice;
+
+		root.classList.remove("dark", "light", "uv");
+		if (resolved === "uv") {
+			root.classList.add("uv");
+			root.setAttribute("data-theme", "uv");
+		} else {
+			root.classList.add(resolved);
+			root.setAttribute("data-theme", resolved);
+		}
+		localStorage.setItem("cofounder-theme", themeChoice);
+	}, [themeChoice]);
 
 	return (
 		<div className="relative min-h-screen w-full text-white overflow-hidden">
@@ -445,6 +512,64 @@ const Settings: React.FC = () => {
 						</CardContent>
 					</Card>
 				</div>
+
+				<Card className="bg-[#0b0b0b]/90 border-[#1f1f1f]">
+					<CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+						<div>
+							<CardTitle className="text-lg">Appearance</CardTitle>
+							<p className="text-sm text-[#a5a5a5]">
+								Switch between dark, light, automatic, or UV-friendly themes for late-night coding.
+							</p>
+						</div>
+						<Badge className="bg-[#1d1d1d] border border-[#2b2b2b] text-[#dcdcdc]">
+							Applies instantly
+						</Badge>
+					</CardHeader>
+					<CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<div className="space-y-3">
+							<p className="text-xs uppercase tracking-wide text-[#8d8da0]">Theme</p>
+							<Select
+								value={themeChoice}
+								onValueChange={(v: "auto" | "dark" | "light" | "uv") => setThemeChoice(v)}
+							>
+								<SelectTrigger className="bg-[#12121a] border-[#1f1f2a] text-white">
+									<SelectValue placeholder="Select theme" />
+								</SelectTrigger>
+								<SelectContent className="bg-[#0e0e15] border-[#1f1f2a] text-white">
+									<SelectItem value="dark">Dark</SelectItem>
+									<SelectItem value="light">Light</SelectItem>
+									<SelectItem value="auto">Automatic (follow system)</SelectItem>
+									<SelectItem value="uv">UV (low-glare)</SelectItem>
+								</SelectContent>
+							</Select>
+							<div className="flex items-center gap-2 text-xs text-[#b5b5c5]">
+								<Switch
+									checked={themeChoice === "auto"}
+									onCheckedChange={(v) => setThemeChoice(v ? "auto" : "dark")}
+								/>
+								<span>Follow system preference</span>
+							</div>
+						</div>
+						<div className="grid grid-cols-2 gap-3 text-sm text-[#d7d7d7]">
+							<div className="rounded-lg border border-[#1d1d1d] bg-gradient-to-br from-[#111] to-[#0a0a0a] p-3">
+								<p className="text-xs uppercase text-[#7f7f7f]">Dark</p>
+								<p className="text-lg font-semibold">Readable & high contrast</p>
+							</div>
+							<div className="rounded-lg border border-[#1d1d1d] bg-gradient-to-br from-[#f6f7fb] to-[#e3e6f0] p-3 text-black">
+								<p className="text-xs uppercase text-[#4b5563]">Light</p>
+								<p className="text-lg font-semibold">Bright & crisp</p>
+							</div>
+							<div className="rounded-lg border border-[#1d1d1d] bg-gradient-to-br from-[#111] via-[#5b21b6] to-[#0f172a] p-3">
+								<p className="text-xs uppercase text-[#c084fc]">UV</p>
+								<p className="text-lg font-semibold text-white">Low-glare late night</p>
+							</div>
+							<div className="rounded-lg border border-[#1d1d1d] bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-3">
+								<p className="text-xs uppercase text-[#7f7f7f]">Auto</p>
+								<p className="text-lg font-semibold">Follows OS setting</p>
+							</div>
+						</div>
+					</CardContent>
+				</Card>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 					<Card className="bg-[#0b0b0b]/80 border-[#222]">
