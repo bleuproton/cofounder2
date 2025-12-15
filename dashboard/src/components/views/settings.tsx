@@ -262,19 +262,18 @@ const Settings: React.FC = () => {
 							Token & Cost Control
 						</Badge>
 						<span className="text-sm text-[#b5b5b5]">
-							Elke LLM-node logt input/output tokens, model, kosten en runtime.
+							Each LLM node logs input/output tokens, model, costs, and runtime.
 						</span>
 					</div>
 					<div className="flex flex-wrap items-end justify-between gap-3">
 						<div>
 							<h1 className="text-3xl font-semibold tracking-tight">
-								Centrale kostenbewaking per project, run en node
+								Centralized cost guardrails per project, run, and node
 							</h1>
 							<p className="text-[#c5c5c5] max-w-3xl leading-relaxed mt-2">
-								Logs worden centraal opgeslagen zodat je realtime zicht hebt op
-								tokenverbruik, modellen en runtime. Harde budgetten en
-								concurrency-limieten voorkomen runaway jobs en onverwachte
-								facturen.
+								Logs are stored centrally so you have real-time visibility into
+								token usage, models, and runtime. Hard budgets and concurrency
+								limits prevent runaway jobs and surprise invoices.
 							</p>
 						</div>
 						<Button variant="secondary" className="font-normal">
@@ -288,7 +287,7 @@ const Settings: React.FC = () => {
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-lg font-semibold flex items-center gap-2">
 								<ShieldCheckIcon className="w-4 h-4" />
-								Harde limieten
+								Hard limits
 							</CardTitle>
 							<Badge className="bg-green-500/20 border border-green-500/30 text-green-200">
 								always-on
@@ -298,7 +297,7 @@ const Settings: React.FC = () => {
 							<div className="grid grid-cols-1 gap-3">
 								<div className="space-y-1">
 									<label className="text-xs uppercase tracking-wide text-[#999]">
-										Workspace maandbudget (USD)
+										Workspace monthly budget (USD)
 									</label>
 									<Input
 										type="number"
@@ -311,7 +310,7 @@ const Settings: React.FC = () => {
 								</div>
 								<div className="space-y-1">
 									<label className="text-xs uppercase tracking-wide text-[#999]">
-										Standaard projectlimiet (USD)
+										Default project limit (USD)
 									</label>
 									<Input
 										type="number"
@@ -338,7 +337,7 @@ const Settings: React.FC = () => {
 								<div>
 									<p className="text-sm font-semibold">Kill-switch</p>
 									<p className="text-xs text-[#a9a9a9]">
-										Stop nodes zodra run {formatUsd(runHardCap)} overschrijdt.
+										Stop nodes once a run exceeds {formatUsd(runHardCap)}.
 									</p>
 								</div>
 								<Switch
@@ -362,7 +361,7 @@ const Settings: React.FC = () => {
 						<CardContent className="space-y-5 text-sm text-[#d7d7d7]">
 							<div className="space-y-2">
 								<div className="flex justify-between text-xs text-[#a9a9a9]">
-									<span>Max parallelle LLM-nodes</span>
+									<span>Max parallel LLM nodes</span>
 									<span className="text-white font-semibold">
 										{concurrencyLimit} nodes
 									</span>
@@ -377,7 +376,7 @@ const Settings: React.FC = () => {
 							</div>
 							<div className="space-y-2">
 								<div className="flex justify-between text-xs text-[#a9a9a9]">
-									<span>Queue diepte</span>
+									<span>Queue depth</span>
 									<span className="text-white font-semibold">
 										{queueDepth} jobs
 									</span>
@@ -391,8 +390,8 @@ const Settings: React.FC = () => {
 								/>
 							</div>
 							<p className="text-xs text-[#a9a9a9]">
-								Runs boven de limiet worden in de wachtrij geplaatst totdat
-								capaciteit vrijkomt. Hard budgetten blijven leidend.
+								Runs above the limit are queued until capacity frees up. Hard
+								budgets remain authoritative.
 							</p>
 						</CardContent>
 					</Card>
@@ -410,9 +409,9 @@ const Settings: React.FC = () => {
 						<CardContent className="space-y-4 text-sm text-[#d7d7d7]">
 							<div className="flex items-center justify-between">
 								<div>
-									<p className="font-semibold">Centraal logboek</p>
+									<p className="font-semibold">Central log</p>
 									<p className="text-xs text-[#a9a9a9]">
-										Schrijf input/output tokens, model en kosten per node weg.
+										Write input/output tokens, model, and costs per node.
 									</p>
 								</div>
 								<Switch
@@ -424,7 +423,7 @@ const Settings: React.FC = () => {
 								<div>
 									<p className="font-semibold">Alerts</p>
 									<p className="text-xs text-[#a9a9a9]">
-										Meldingen bij 80% budget, afwijkende runtime of modelwissel.
+										Notify at 80% budget, anomalous runtime, or model change.
 									</p>
 								</div>
 								<Switch
@@ -434,13 +433,13 @@ const Settings: React.FC = () => {
 							</div>
 							<div className="rounded-lg border border-[#1e1e1e] bg-[#111]/60 p-3 space-y-2 text-xs text-[#b9b9b9]">
 								<p className="font-semibold text-white">
-									Logformat per LLM-node
+									Log format per LLM node
 								</p>
 								<ul className="grid grid-cols-1 gap-1 list-disc list-inside">
-									<li>model + provider (b.v. gpt-4o-mini)</li>
-									<li>input/output tokens en prijs per 1K</li>
-									<li>totale kosten en runtime per node</li>
-									<li>run-id, project-id en timestamp</li>
+									<li>model + provider (e.g. gpt-4o-mini)</li>
+									<li>input/output tokens and price per 1K</li>
+									<li>total cost and runtime per node</li>
+									<li>run id, project id, and timestamp</li>
 								</ul>
 							</div>
 						</CardContent>
@@ -452,7 +451,7 @@ const Settings: React.FC = () => {
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2 text-lg">
 								<ClockIcon className="w-4 h-4" />
-								Huidig verbruik
+								Current spend
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-4">
@@ -468,7 +467,7 @@ const Settings: React.FC = () => {
 									</p>
 								</div>
 								<Badge className="bg-[#1e1e1e] border border-[#2c2c2c] text-[#d5d5d5]">
-									{budgetProgress.toFixed(0)}% gebruikt
+									{budgetProgress.toFixed(0)}% used
 								</Badge>
 							</div>
 							<Progress value={budgetProgress} className="h-2" />
@@ -505,21 +504,21 @@ const Settings: React.FC = () => {
 									Hard stop per run ({formatUsd(runHardCap)})
 								</span>
 								<Badge className="bg-[#141414] border border-[#252525] text-[#c9c9c9]">
-									{killSwitchEnabled ? "actief" : "uitgeschakeld"}
+									{killSwitchEnabled ? "active" : "disabled"}
 								</Badge>
 							</div>
 							<div className="flex justify-between items-center">
 								<span className="text-[#c5c5c5]">
-									Parallelle nodes (cap {concurrencyLimit})
+									Parallel nodes (cap {concurrencyLimit})
 								</span>
 								<Badge className="bg-[#141414] border border-[#252525] text-[#c9c9c9]">
-									{queueDepth} in queue ok
+									{queueDepth} queued allowed
 								</Badge>
 							</div>
 							<p className="text-xs text-[#9b9b9b]">
-								Budgetten gelden per project ({formatUsd(defaultProjectCap)}{" "}
-								standaard). Runs die budget overschrijden worden direct gestopt
-								en gelogd.
+								Budgets apply per project ({formatUsd(defaultProjectCap)}{" "}
+								default). Runs that exceed budget are stopped immediately and
+								logged.
 							</p>
 						</CardContent>
 					</Card>
@@ -530,11 +529,11 @@ const Settings: React.FC = () => {
 						<div>
 							<CardTitle className="text-lg">Project ledger</CardTitle>
 							<p className="text-sm text-[#a5a5a5]">
-								Zicht op budget, tokens en runtime per project.
+								Visibility into budget, tokens, and runtime per project.
 							</p>
 						</div>
 						<Badge className="bg-[#1d1d1d] border border-[#2b2b2b] text-[#dcdcdc]">
-							{projectBudgets.length} projecten gemonitord
+							{projectBudgets.length} projects monitored
 						</Badge>
 					</CardHeader>
 					<CardContent>
@@ -543,11 +542,11 @@ const Settings: React.FC = () => {
 								<TableRow className="border-[#1f1f1f]">
 									<TableHead className="text-[#a5a5a5]">Project</TableHead>
 									<TableHead className="text-[#a5a5a5]">Budget</TableHead>
-									<TableHead className="text-[#a5a5a5]">Verbruikt</TableHead>
+									<TableHead className="text-[#a5a5a5]">Spent</TableHead>
 									<TableHead className="text-[#a5a5a5]">Tokens (in/out)</TableHead>
 									<TableHead className="text-[#a5a5a5]">Runs</TableHead>
 									<TableHead className="text-[#a5a5a5]">Concurrency</TableHead>
-									<TableHead className="text-[#a5a5a5]">Laatste run</TableHead>
+									<TableHead className="text-[#a5a5a5]">Last run</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -559,18 +558,18 @@ const Settings: React.FC = () => {
 									const statusBadge =
 										percentage >= 95
 											? {
-													label: "bijna cap",
+													label: "near cap",
 													className:
 														"bg-red-500/20 border-red-500/30 text-red-200",
 											  }
 											: percentage >= 75
 												? {
-														label: "let op",
+														label: "watch",
 														className:
 															"bg-amber-500/20 border-amber-500/30 text-amber-100",
 												  }
 												: {
-														label: "ruime marge",
+														label: "room left",
 														className:
 															"bg-green-500/15 border-green-500/25 text-green-200",
 												  };
@@ -633,30 +632,30 @@ const Settings: React.FC = () => {
 				<div className="space-y-4">
 					<div className="flex items-center justify-between">
 						<div>
-							<h2 className="text-xl font-semibold">Laatste runs</h2>
+							<h2 className="text-xl font-semibold">Latest runs</h2>
 							<p className="text-sm text-[#a5a5a5]">
-								Per run inzicht in tokens, kosten en welke nodes geraakt zijn.
+								Per run insight into tokens, costs, and which nodes were hit.
 							</p>
 						</div>
 						<Badge className="bg-[#161616] border border-[#2c2c2c] text-[#d6d6d6]">
-							centrale opslag -> UI
+							central store -> UI
 						</Badge>
 					</div>
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 						{runHistory.map((run) => {
 							const statusMap = {
 								ok: {
-									label: "binnen budget",
+									label: "within budget",
 									className:
 										"bg-green-500/20 border border-green-500/30 text-green-100",
 								},
 								warn: {
-									label: "dicht bij cap",
+									label: "near cap",
 									className:
 										"bg-amber-500/20 border border-amber-500/30 text-amber-100",
 								},
 								stopped: {
-									label: "gestopt op limiet",
+									label: "stopped on limit",
 									className:
 										"bg-red-500/20 border border-red-500/30 text-red-100",
 								},
@@ -689,7 +688,7 @@ const Settings: React.FC = () => {
 										</div>
 										<div className="flex gap-4 text-sm text-[#d7d7d7]">
 											<div className="flex flex-col">
-												<span className="text-xs text-[#8f8f8f]">Kosten</span>
+												<span className="text-xs text-[#8f8f8f]">Cost</span>
 												<span className="font-semibold">
 													{formatUsd(run.totalCost)}
 												</span>
@@ -718,7 +717,7 @@ const Settings: React.FC = () => {
 															Tokens (in/out)
 														</TableHead>
 														<TableHead className="text-[#a5a5a5]">
-															Kosten
+															Cost
 														</TableHead>
 														<TableHead className="text-[#a5a5a5]">
 															Runtime
@@ -736,7 +735,7 @@ const Settings: React.FC = () => {
 																  }
 																: node.status === "warn"
 																	? {
-																			label: "duur",
+																			label: "costly",
 																			className:
 																				"bg-amber-500/20 border-amber-500/30 text-amber-100",
 																	  }
@@ -786,8 +785,8 @@ const Settings: React.FC = () => {
 											</Table>
 										</div>
 										<p className="text-xs text-[#8f8f8f]">
-											Alle node logs worden in de centrale datastore bewaard en
-											zijn opvraagbaar via de API en deze UI.
+											All node logs are stored in the central datastore and are
+											available via the API and this UI.
 										</p>
 									</CardContent>
 								</Card>
