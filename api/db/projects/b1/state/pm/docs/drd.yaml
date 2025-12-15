@@ -1,0 +1,170 @@
+_updated: 1765838411362
+_processing: false
+key: pm.drd
+data: >-
+  # Database Requirements Document (DRD) for 'OK Web App'
+
+
+  ## Overview
+
+  The 'OK Web App' is a simple web application that allows users to click a
+  button and see the text "OK" displayed on the screen. To support the core
+  functionality and additional features outlined in the Product Requirements
+  Document (PRD) and Features Requirements Document (FRD), the following
+  database schema is proposed.
+
+
+  ## User Personas and Data Requirements
+
+  The 'OK Web App' has two main user personas:
+
+
+  1. **Casual User**:
+     - This user simply wants to interact with the app and see the "OK" text displayed.
+     - No specific data needs to be stored for this user, as their interactions are ephemeral and do not require persistence.
+
+  2. **Curious Experimenter**:
+     - This user wants to interact with the app in different ways, share it with others, and access it from multiple devices.
+     - To support the Curious Experimenter's needs, the following data needs to be stored:
+       - User-customized button text
+       - User session and device information to ensure cross-device consistency
+
+  ## Database Schema
+
+
+  ### `users` Table
+
+  This table stores information about users who have customized the button text
+  in the 'OK Web App'.
+
+
+  ```
+
+  users
+
+  - id (integer, primary key)
+
+  - button_text (string, nullable)
+
+  - created_at (timestamp)
+
+  - updated_at (timestamp)
+
+  ```
+
+
+  **Justification**:
+
+  - The `users` table is used to store user-specific data, such as the
+  customized button text.
+
+  - The `button_text` field allows users to personalize the app's button, as per
+  the requirements.
+
+  - The `created_at` and `updated_at` fields are included to track when the
+  user's record was created and last updated.
+
+
+  ### `sessions` Table
+
+  This table stores information about user sessions, which is used to ensure
+  cross-device consistency.
+
+
+  ```
+
+  sessions
+
+  - id (integer, primary key)
+
+  - user_id (integer, foreign key references users.id)
+
+  - device_identifier (string)
+
+  - created_at (timestamp)
+
+  - updated_at (timestamp)
+
+  ```
+
+
+  **Justification**:
+
+  - The `sessions` table stores information about user sessions, including the
+  associated user ID, device identifier, and timestamps.
+
+  - The `user_id` field is a foreign key that references the `users` table,
+  allowing for the association between users and their sessions.
+
+  - The `device_identifier` field stores a unique identifier for the device used
+  to access the app, enabling cross-device consistency.
+
+  - The `created_at` and `updated_at` fields are included to track when the
+  session was created and last updated.
+
+
+  ### `analytics` Table
+
+  This table stores analytics data about user interactions with the 'OK Web
+  App'.
+
+
+  ```
+
+  analytics
+
+  - id (integer, primary key)
+
+  - user_id (integer, foreign key references users.id, nullable)
+
+  - device_identifier (string)
+
+  - button_clicks (integer)
+
+  - referrer (string, nullable)
+
+  - created_at (timestamp)
+
+  ```
+
+
+  **Justification**:
+
+  - The `analytics` table stores data about user interactions with the app,
+  including the number of button clicks, the device used, and the referrer (if
+  applicable).
+
+  - The `user_id` field is a foreign key that references the `users` table,
+  allowing for the association between users and their analytics data. This
+  field is nullable, as anonymous users (without a user account) can also be
+  tracked.
+
+  - The `device_identifier` field stores a unique identifier for the device used
+  to access the app, enabling analysis of device-specific usage patterns.
+
+  - The `button_clicks` field tracks the number of times the user has clicked
+  the button.
+
+  - The `referrer` field stores the source from which the user accessed the app
+  (e.g., a shared link).
+
+  - The `created_at` field is included to track when the analytics data was
+  recorded.
+
+
+  ## Summary
+
+  The proposed database schema for the 'OK Web App' includes three main tables:
+
+
+  1. `users`: Stores user-specific data, such as customized button text.
+
+  2. `sessions`: Stores user session information to ensure cross-device
+  consistency.
+
+  3. `analytics`: Stores analytics data about user interactions with the app.
+
+
+  This schema provides a comprehensive and efficient way to manage the data
+  requirements for the 'OK Web App', supporting the core functionality and
+  additional features outlined in the PRD and FRD.

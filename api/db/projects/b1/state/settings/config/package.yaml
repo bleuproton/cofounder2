@@ -1,0 +1,21 @@
+_updated: 1765838493944
+_processing: false
+key: settings.config.package
+data:
+  backend:
+    dependencies:
+      express: "*"
+      cors: "*"
+      dotenv: "*"
+      jsonwebtoken: "*"
+      "@electric-sql/pglite": "*"
+    env:
+      PORT: "1337"
+      JWT_SECRET: your_secret_key
+  webapp:
+    dependencies:
+      "@reduxjs/toolkit": "*"
+      react-redux: "*"
+      redux-persist: "*"
+      socket.io-client: "*"
+      axios: "*"

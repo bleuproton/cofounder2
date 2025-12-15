@@ -1,0 +1,136 @@
+_updated: 1765838410284
+_processing: false
+key: pm.uxsmd
+data: >-
+  # UX Sitemap Document (UXSMD) for 'OK Web App'
+
+
+  ## I. Global UI Views (GV_*)
+
+
+  ### GV_TopNavBar
+
+  - This is the top navigation bar that will be present on all pages of the 'OK
+  Web App'.
+
+  - It will contain the app's title/logo, and potentially some additional links
+  or actions (e.g., share button, settings, etc.).
+
+  - The top nav bar should be responsive and adapt its layout and content based
+  on the user's device and screen size.
+
+  - The top nav bar should be visible and accessible to both authenticated and
+  unauthenticated users.
+
+
+  ### GV_Footer
+
+  - This is the global footer that will be present on all pages of the 'OK Web
+  App'.
+
+  - It may contain copyright information, links to privacy policy, terms of
+  service, and other legal/informational content.
+
+  - The footer should be responsive and adapt its layout and content based on
+  the user's device and screen size.
+
+  - The footer should be visible and accessible to both authenticated and
+  unauthenticated users.
+
+
+  ## II. Unique UI Views (UV_*)
+
+
+  ### UV_Landing
+
+  - This is the main landing page of the 'OK Web App'.
+
+  - It will feature a large, prominent button in the center of the screen, with
+  the text "OK" displayed on the button.
+
+  - When the user clicks the button, the text "OK" should be displayed on the
+  screen, with a subtle animation or transition effect.
+
+  - The layout and positioning of the button and "OK" text should be responsive
+  and adapt to the user's device and screen size.
+
+  - The landing page should load quickly and provide a seamless user experience,
+  with minimal wait time for the "OK" text to appear.
+
+  - The landing page should be accessible to both authenticated and
+  unauthenticated users.
+
+
+  ### UV_CustomizeButton
+
+  - This view allows users to customize the text that appears on the button in
+  the 'OK Web App'.
+
+  - It should feature an input field where the user can enter their desired
+  button text.
+
+  - After the user submits the custom button text, the button on the landing
+  page (UV_Landing) should update to display the new text.
+
+  - The custom button text should be saved and persist across the user's
+  different devices, allowing them to maintain their personalized experience.
+
+  - The customize button view should be accessible to both authenticated and
+  unauthenticated users.
+
+
+  ### UV_Settings
+
+  - This view allows users to access the app's settings and preferences.
+
+  - It should include an option to enable or disable the sound effects feature,
+  allowing users to customize the interaction experience.
+
+  - The settings view should also provide information about the app, such as the
+  version number, credits, and links to the app's privacy policy and terms of
+  service.
+
+  - The settings view should be accessible to both authenticated and
+  unauthenticated users.
+
+
+  ### UV_ShareApp
+
+  - This view provides users with a shareable link to the 'OK Web App'.
+
+  - It should feature a prominent button or input field that the user can copy
+  or interact with to generate a shareable link.
+
+  - The shareable link should lead directly to the 'OK Web App' landing page
+  (UV_Landing), allowing users to easily share the experience with others.
+
+  - The share app view should be accessible to both authenticated and
+  unauthenticated users.
+
+
+  ## III. Inter-App Navigation
+
+
+  Source View | Target View | Intent | Action Description
+
+  --- | --- | --- | ---
+
+  UV_Landing | UV_CustomizeButton | Allow users to customize the button text |
+  User clicks on a "Customize Button" link or button within the UV_Landing view
+
+  UV_Landing | UV_Settings | Allow users to access the app's settings and
+  preferences | User clicks on a "Settings" link or button within the UV_Landing
+  view
+
+  UV_Landing | UV_ShareApp | Allow users to share the app with others | User
+  clicks on a "Share" link or button within the UV_Landing view
+
+  UV_CustomizeButton | UV_Landing | Allow users to return to the main landing
+  page | User clicks on a "Back" or "Cancel" button within the
+  UV_CustomizeButton view
+
+  UV_Settings | UV_Landing | Allow users to return to the main landing page |
+  User clicks on a "Back" or "Close" button within the UV_Settings view
+
+  UV_ShareApp | UV_Landing | Allow users to return to the main landing page |
+  User clicks on a "Back" or "Close" button within the UV_ShareApp view

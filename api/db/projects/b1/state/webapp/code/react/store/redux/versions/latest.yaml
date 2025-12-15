@@ -1,0 +1,179 @@
+_updated: 1765838493926
+_processing: false
+key: webapp.react.store.redux.latest
+data:
+  analysis: >-
+    ## Analysis
+
+
+    The 'OK Web App' requires a Redux store to manage the global state of the
+    application. The store will handle the following:
+
+
+    1. **User Data**: The user's customized button text, which should be
+    persisted across sessions.
+
+    2. **Session Management**: Tracking the user's sessions and device
+    identifiers to ensure cross-device consistency.
+
+    3. **Analytics Data**: Collecting data on user interactions, such as button
+    clicks and referrer information.
+
+
+    The store should be structured to reflect the global state requirements
+    outlined in the architecture analysis, with separate slices for user data,
+    sessions, and analytics. It should also include actions and thunks to handle
+    the state management and any necessary asynchronous operations, such as
+    saving user preferences or generating shareable links.
+
+
+    To ensure data persistence and consistency, the store should utilize the
+    `redux-persist` library to store the global state in the browser's
+    localStorage. This will prevent data loss on page refreshes or app restarts.
+
+
+    Additionally, the store should be designed to be easily extensible, allowing
+    for the addition of new features or modifications to the existing ones
+    without requiring major refactoring of the codebase.
+  tsx: >-
+    import { configureStore, createSlice, PayloadAction } from
+    '@reduxjs/toolkit';
+
+    import { persistReducer, persistStore } from 'redux-persist';
+
+    import storage from 'redux-persist/lib/storage';
+
+
+    // User Slice
+
+    interface UserState {
+      id: string;
+      buttonText: string;
+      createdAt: Date | null;
+      updatedAt: Date | null;
+    }
+
+
+    const user_slice = createSlice({
+      name: 'user',
+      initialState: {
+        id: '',
+        buttonText: 'OK',
+        createdAt: null,
+        updatedAt: null,
+      } as UserState,
+      reducers: {
+        setUserButtonText: (state, action: PayloadAction<string>) => {
+          state.buttonText = action.payload;
+          state.updatedAt = new Date();
+        },
+        setUserData: (state, action: PayloadAction<Partial<UserState>>) => {
+          state = { ...state, ...action.payload };
+        },
+      },
+    });
+
+
+    // Sessions Slice
+
+    interface SessionState {
+      id: string;
+      userId: string;
+      deviceIdentifier: string;
+      createdAt: Date;
+      updatedAt: Date;
+    }
+
+
+    const sessions_slice = createSlice({
+      name: 'sessions',
+      initialState: [] as SessionState[],
+      reducers: {
+        addSession: (state, action: PayloadAction<Partial<SessionState>>) => {
+          state.push({
+            id: crypto.randomUUID(),
+            userId: action.payload.userId || '',
+            deviceIdentifier: action.payload.deviceIdentifier || '',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+        },
+      },
+    });
+
+
+    // Analytics Slice
+
+    interface AnalyticsState {
+      id: string;
+      userId: string | null;
+      deviceIdentifier: string;
+      buttonClicks: number;
+      referrer: string | null;
+      createdAt: Date;
+    }
+
+
+    const analytics_slice = createSlice({
+      name: 'analytics',
+      initialState: [] as AnalyticsState[],
+      reducers: {
+        logButtonClick: (state, action: PayloadAction<{ userId: string | null; deviceIdentifier: string; referrer: string | null }>) => {
+          state.push({
+            id: crypto.randomUUID(),
+            userId: action.payload.userId,
+            deviceIdentifier: action.payload.deviceIdentifier,
+            buttonClicks: 1,
+            referrer: action.payload.referrer,
+            createdAt: new Date(),
+          });
+        },
+      },
+    });
+
+
+    // Persisted Store Configuration
+
+    const persistConfig = {
+      key: 'root',
+      storage,
+      whitelist: ['user', 'sessions'],
+    };
+
+
+    const rootReducer = {
+      user: user_slice.reducer,
+      sessions: sessions_slice.reducer,
+      analytics: analytics_slice.reducer,
+    };
+
+
+    const persistedReducer = persistReducer(persistConfig, rootReducer);
+
+
+    const store = configureStore({
+      reducer: persistedReducer,
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+          serializableCheck: false,
+        }),
+    });
+
+
+    export const { setUserButtonText, setUserData } = user_slice.actions;
+
+    export const { addSession } = sessions_slice.actions;
+
+    export const { logButtonClick } = analytics_slice.actions;
+
+
+    export const persistor = persistStore(store);
+
+    export default store;
+  dependencies:
+    "@reduxjs/toolkit": "*"
+    react-redux: "*"
+    redux-persist: "*"
+    socket.io-client: "*"
+    axios: "*"
+  timestamp: "1765838481476"

@@ -1,0 +1,16 @@
+_updated: 1765838440537
+_processing: false
+key: backend.requirements
+data:
+  restApi:
+    justifyYourAnswer: The 'OK Web App' features do not require a complex backend
+      with a RESTful API. The core functionality of displaying the "OK" text
+      when a button is clicked can be easily handled by a simple serverless
+      backend or a static web application without the need for a dedicated API.
+    required: false
+  realtimeWebsockets:
+    justifyYourAnswer: Similarly, the 'OK Web App' features do not necessitate the
+      use of real-time WebSockets. The button click interaction and the display
+      of the "OK" text can be handled synchronously without the need for
+      real-time updates or push notifications.
+    required: false

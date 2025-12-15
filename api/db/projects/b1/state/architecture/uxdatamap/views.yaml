@@ -1,0 +1,163 @@
+_updated: 1765838481405
+_processing: false
+key: uxdatamap.views
+data:
+  unique:
+    UV_Landing:
+      slugs: []
+      urlParams: []
+      stateVariables:
+        - name: buttonText
+          role: The text to be displayed on the button. This should default to "OK" but
+            can be customized by the user.
+          schema:
+            type: string
+            default: OK
+          mappingIfFromSource:
+            - source: globalAppState
+              name: user.buttonText
+        - name: showOkText
+          role: A boolean flag to determine whether the "OK" text should be displayed on
+            the screen after the button is clicked.
+          schema:
+            type: boolean
+            default: false
+      actions:
+        - name: handleButtonClick
+          intent: This function should be called when the user clicks the button. It
+            should update the showOkText variable to true, triggering the
+            display of the "OK" text on the screen.
+          triggers:
+            - Button click
+      globalStateVariablesAccessed:
+        user.buttonText:
+          description: To get the current user's customized button text and display it on
+            the button
+    UV_CustomizeButton:
+      slugs: []
+      urlParams: []
+      stateVariables:
+        - name: customButtonText
+          role: The text entered by the user to customize the button text.
+          schema:
+            type: string
+            default: ""
+      actions:
+        - name: handleCustomButtonTextChange
+          intent: This function should be called whenever the user types in the custom
+            button text input field. It should update the customButtonText
+            variable.
+          triggers:
+            - Text input change
+        - name: handleSaveCustomButtonText
+          intent: This function should be called when the user submits the custom button
+            text. It should save the customButtonText to the user's account or
+            session data, and update the buttonText variable in the UV_Landing
+            view.
+          triggers:
+            - Button click
+      globalStateVariablesAccessed:
+        user.buttonText:
+          description: To update the user's customized button text in the global state
+    UV_Settings:
+      slugs: []
+      urlParams: []
+      stateVariables:
+        - name: soundEffectsEnabled
+          role: A boolean flag to determine whether sound effects should be enabled in the
+            app.
+          schema:
+            type: boolean
+            default: true
+      actions:
+        - name: toggleSoundEffects
+          intent: This function should be called when the user interacts with the sound
+            effects toggle in the settings. It should update the
+            soundEffectsEnabled variable.
+          triggers:
+            - Toggle button click
+      globalStateVariablesAccessed: {}
+    UV_ShareApp:
+      slugs: []
+      urlParams: []
+      stateVariables:
+        - name: shareableLink
+          role: The URL link that can be shared with others to access the 'OK Web App'.
+          schema:
+            type: string
+            default: ""
+      actions:
+        - name: generateShareableLink
+          intent: This function should be called when the user interacts with the "Share"
+            button or input field. It should generate a shareable link to the
+            UV_Landing view and update the shareableLink variable.
+          triggers:
+            - Button click
+            - Input field interaction
+      globalStateVariablesAccessed: {}
+  shared:
+    GV_TopNavBar:
+      slugs: []
+      urlParams: []
+      stateVariables:
+        - name: appTitle
+          role: The title or logo of the 'OK Web App' to be displayed in the top nav bar
+          schema:
+            type: string
+          default: OK Web App
+        - name: additionalLinks
+          role: An array of additional links or actions to be displayed in the top nav bar
+            (e.g., share button, settings)
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                label:
+                  type: string
+                url:
+                  type: string
+                icon:
+                  type: string
+          default: []
+          mappingIfFromSource:
+            - source: globalAppState
+              name: user
+      actions:
+        - name: handleLinkClick
+          intent: Handles the click event on any of the additional links in the top nav
+            bar
+          triggers:
+            - on link click
+      globalStateVariablesAccessed:
+        user:
+          description: To get the user's information and customize the top nav bar content
+            accordingly (e.g., display user's name, profile picture)
+    GV_Footer:
+      slugs: []
+      urlParams: []
+      stateVariables:
+        - name: copyrightText
+          role: The copyright text to be displayed in the footer
+          schema:
+            type: string
+          default: © 2023 OK Web App. All rights reserved.
+        - name: legalLinks
+          role: An array of links to legal content (e.g., privacy policy, terms of
+            service)
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                label:
+                  type: string
+                url:
+                  type: string
+          default:
+            - label: Privacy Policy
+              url: /privacy-policy
+            - label: Terms of Service
+              url: /terms-of-service
+      actions: []
+      globalStateVariablesAccessed: {}

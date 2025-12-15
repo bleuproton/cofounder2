@@ -1,0 +1,72 @@
+_updated: 1765838431795
+_processing: false
+key: db.postgres
+data: >-
+  -- Create the users table
+
+  CREATE TABLE users (
+      id SERIAL PRIMARY KEY,
+      button_text VARCHAR(255) DEFAULT 'OK',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+
+  -- Create the sessions table
+
+  CREATE TABLE sessions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      device_identifier VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+
+  -- Create the analytics table
+
+  CREATE TABLE analytics (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER,
+      device_identifier VARCHAR(255) NOT NULL,
+      button_clicks INTEGER NOT NULL DEFAULT 0,
+      referrer VARCHAR(255),
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+
+  -- Seed the users table
+
+  INSERT INTO users (button_text) VALUES
+      ('Custom Button 1'),
+      ('Custom Button 2'),
+      ('Custom Button 3'),
+      ('Custom Button 4'),
+      ('Custom Button 5');
+
+  -- Seed the sessions table
+
+  INSERT INTO sessions (user_id, device_identifier) VALUES
+      (1, 'device_1'),
+      (1, 'device_2'),
+      (2, 'device_3'),
+      (3, 'device_4'),
+      (4, 'device_5');
+
+  -- Seed the analytics table
+
+  INSERT INTO analytics (user_id, device_identifier, button_clicks, referrer)
+  VALUES
+      (1, 'device_1', 10, 'https://www.example.com'),
+      (1, 'device_2', 5, NULL),
+      (2, 'device_3', 15, 'https://www.google.com'),
+      (3, 'device_4', 8, NULL),
+      (4, 'device_5', 12, 'https://www.facebook.com');
+
+  INSERT INTO analytics (device_identifier, button_clicks, referrer) VALUES
+      ('device_6', 20, 'https://www.twitter.com'),
+      ('device_7', 7, NULL),
+      ('device_8', 18, 'https://www.instagram.com'),
+      ('device_9', 3, NULL),
+      ('device_10', 14, 'https://www.linkedin.com');

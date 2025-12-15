@@ -1,0 +1,66 @@
+_updated: 1765838421153
+_processing: false
+key: db.schemas
+data:
+  users:
+    - name: id
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: button_text
+      type: String
+      nullable: true
+      default: OK
+    - name: created_at
+      type: Date
+      nullable: false
+    - name: updated_at
+      type: Date
+      nullable: false
+  sessions:
+    - name: id
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_id
+      type: String
+      nullable: false
+      foreignKey:
+        table: users
+        column: id
+    - name: device_identifier
+      type: String
+      nullable: false
+    - name: created_at
+      type: Date
+      nullable: false
+    - name: updated_at
+      type: Date
+      nullable: false
+  analytics:
+    - name: id
+      type: String
+      unique: true
+      nullable: false
+      primaryKey: true
+    - name: user_id
+      type: String
+      nullable: true
+      foreignKey:
+        table: users
+        column: id
+    - name: device_identifier
+      type: String
+      nullable: false
+    - name: button_clicks
+      type: Number
+      nullable: false
+      default: 0
+    - name: referrer
+      type: String
+      nullable: true
+    - name: created_at
+      type: Date
+      nullable: false

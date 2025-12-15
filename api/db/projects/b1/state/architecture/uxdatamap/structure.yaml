@@ -1,0 +1,76 @@
+_updated: 1765838474583
+_processing: false
+key: uxdatamap.structure
+data:
+  root:
+    globalState:
+      user:
+        schema:
+          id: string
+          buttonText: string
+          createdAt: Date
+          updatedAt: Date
+        default:
+          id: ""
+          buttonText: OK
+          createdAt: null
+          updatedAt: null
+        example:
+          id: abc123
+          buttonText: Click me
+          createdAt: 2023-04-18T12:00:00Z
+          updatedAt: 2023-04-19T10:30:00Z
+      sessions:
+        schema:
+          - id: string
+            userId: string
+            deviceIdentifier: string
+            createdAt: Date
+            updatedAt: Date
+        default: []
+        example:
+          - id: session123
+            userId: abc123
+            deviceIdentifier: desktop-abc123
+            createdAt: 2023-04-18T12:00:00Z
+            updatedAt: 2023-04-18T12:00:10Z
+          - id: session456
+            userId: abc123
+            deviceIdentifier: mobile-xyz456
+            createdAt: 2023-04-19T09:30:00Z
+            updatedAt: 2023-04-19T09:30:15Z
+      analytics:
+        schema:
+          - id: string
+            userId: string | null
+            deviceIdentifier: string
+            buttonClicks: number
+            referrer: string | null
+            createdAt: Date
+        default: []
+        example:
+          - id: analytics123
+            userId: abc123
+            deviceIdentifier: desktop-abc123
+            buttonClicks: 15
+            referrer: https://example.com
+            createdAt: 2023-04-18T12:00:00Z
+          - id: analytics456
+            userId: null
+            deviceIdentifier: mobile-xyz456
+            buttonClicks: 8
+            referrer: null
+            createdAt: 2023-04-19T09:30:00Z
+  routes:
+    - description: The main landing page of the 'OK Web App'
+      path: /
+      view: UV_Landing
+    - description: Allow users to customize the button text
+      path: /customize-button
+      view: UV_CustomizeButton
+    - description: Allow users to access the app's settings and preferences
+      path: /settings
+      view: UV_Settings
+    - description: Allow users to share the app with others
+      path: /share
+      view: UV_ShareApp

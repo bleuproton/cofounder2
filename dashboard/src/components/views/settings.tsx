@@ -638,7 +638,7 @@ const Settings: React.FC = () => {
 							</p>
 						</div>
 						<Badge className="bg-[#161616] border border-[#2c2c2c] text-[#d6d6d6]">
-							central store -> UI
+							central store -&gt; UI
 						</Badge>
 					</div>
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -62,7 +62,7 @@ async function _convertFromOpenaiFormat({ messages }) {
 }
 
 async function inference({
-	model = "claude-3-5-sonnet-20240620",
+	model = process.env.ANTHROPIC_MODEL || "claude-3-haiku-20240307",
 	messages,
 	stream = process.stdout,
 }) {
@@ -70,14 +70,47 @@ async function inference({
 	const converted = await _convertFromOpenaiFormat({ messages });
 	// console.dir({ "debug:utils:anthropic": {messages : converted.messages} } , {depth:null})
 
-	const _model = model.includes("gpt") ? "claude-3-5-sonnet-20240620" : model;
-	const streaming = await anthropic.messages.create({
-		model: _model,
+const fallbackModel = process.env.ANTHROPIC_MODEL || "claude-3-haiku-20240307";
+const resolveModel = (requested) =>
+	requested && !requested.includes("gpt") ? requested : fallbackModel;
+
+let chosenModel = resolveModel(model);
+let streaming;
+const maxTokensFor = (m) => {
+	if (m.includes("haiku")) return 4096;
+	if (m.includes("sonnet")) return 8192;
+	if (m.includes("opus")) return 8192;
+	return 4096;
+};
+let maxTokens = maxTokensFor(chosenModel);
+
+try {
+	streaming = await anthropic.messages.create({
+		model: chosenModel,
 		stream: true,
 		system: converted.system,
-		max_tokens: 8192,
+		max_tokens: maxTokens,
 		messages: converted.messages,
 	});
+} catch (err) {
+	const notFound =
+		err?.error?.error?.type === "not_found_error" ||
+		err?.message?.includes("not_found_error");
+	if (notFound && chosenModel !== fallbackModel) {
+		// Retry once with the fallback model that is generally available.
+		chosenModel = fallbackModel;
+		maxTokens = maxTokensFor(chosenModel);
+		streaming = await anthropic.messages.create({
+			model: chosenModel,
+			stream: true,
+			system: converted.system,
+			max_tokens: maxTokens,
+			messages: converted.messages,
+		});
+	} else {
+		throw err;
+	}
+	}
 
 	let text = "";
 	let usage = {};
@@ -111,7 +144,7 @@ async function inference({
 
 	return {
 		text,
-		usage: { model: _model, ...usage },
+		usage: { model: chosenModel, ...usage },
 	};
 }
 
