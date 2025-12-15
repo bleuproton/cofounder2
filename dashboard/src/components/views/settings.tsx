@@ -69,6 +69,28 @@ const Settings: React.FC = () => {
 	const [loggingEnabled, setLoggingEnabled] = useState<boolean>(true);
 	const [alertingEnabled, setAlertingEnabled] = useState<boolean>(true);
 	const [killSwitchEnabled, setKillSwitchEnabled] = useState<boolean>(true);
+	const [openAiApiKey, setOpenAiApiKey] = useState<string>("");
+	const [openAiBaseUrl, setOpenAiBaseUrl] = useState<string>("https://api.openai.com/v1");
+	const [openAiModel, setOpenAiModel] = useState<string>("gpt-4o-mini");
+	const [openAiOrg, setOpenAiOrg] = useState<string>("");
+	const [anthropicApiKey, setAnthropicApiKey] = useState<string>("");
+	const [anthropicBaseUrl, setAnthropicBaseUrl] = useState<string>(
+		"https://api.anthropic.com",
+	);
+	const [anthropicModel, setAnthropicModel] = useState<string>("claude-3-5-sonnet-20241022");
+
+	const handleSaveProviders = () => {
+		// Wire this to your backend or env management.
+		console.log("provider-settings", {
+			openAiApiKey: openAiApiKey ? "***" : "",
+			openAiBaseUrl,
+			openAiModel,
+			openAiOrg,
+			anthropicApiKey: anthropicApiKey ? "***" : "",
+			anthropicBaseUrl,
+			anthropicModel,
+		});
+	};
 
 	const projectBudgets = useMemo<ProjectBudget[]>(
 		() => [
@@ -281,6 +303,137 @@ const Settings: React.FC = () => {
 						</Button>
 					</div>
 				</div>
+
+				<Card className="bg-[#0b0b0b]/90 border-[#1f1f1f]">
+					<CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+						<div>
+							<CardTitle className="text-lg">API providers</CardTitle>
+							<p className="text-sm text-[#a5a5a5]">
+								Configure endpoints and defaults for OpenAI and Anthropic. Values here
+								are local UI state until you wire persistence.
+							</p>
+						</div>
+						<Button variant="secondary" className="font-normal" onClick={handleSaveProviders}>
+							Save provider settings
+						</Button>
+					</CardHeader>
+					<CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<Card className="bg-[#0f0f0f]/70 border-[#222]">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-lg">
+									<BoltIcon className="w-4 h-4" />
+									OpenAI
+								</CardTitle>
+							</CardHeader>
+							<CardContent className="space-y-3 text-sm text-[#d7d7d7]">
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										API key
+									</label>
+									<Input
+										type="password"
+										value={openAiApiKey}
+										onChange={(e) => setOpenAiApiKey(e.target.value)}
+										placeholder="sk-..."
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+									/>
+								</div>
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										Base URL
+									</label>
+									<Input
+										value={openAiBaseUrl}
+										onChange={(e) => setOpenAiBaseUrl(e.target.value)}
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+									/>
+									<p className="text-xs text-[#8f8f8f]">
+										Set this to a proxy if you route traffic internally.
+									</p>
+								</div>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+									<div className="space-y-1">
+										<label className="text-xs uppercase tracking-wide text-[#999]">
+											Default model
+										</label>
+										<Input
+											value={openAiModel}
+											onChange={(e) => setOpenAiModel(e.target.value)}
+											placeholder="gpt-4o-mini"
+											className="bg-[#151515] border-[#2d2d2d] text-white"
+										/>
+									</div>
+									<div className="space-y-1">
+										<label className="text-xs uppercase tracking-wide text-[#999]">
+											Org / Project
+										</label>
+										<Input
+											value={openAiOrg}
+											onChange={(e) => setOpenAiOrg(e.target.value)}
+											placeholder="org_..."
+											className="bg-[#151515] border-[#2d2d2d] text-white"
+										/>
+									</div>
+								</div>
+								<p className="text-xs text-[#8f8f8f]">
+									Apply these to environment variables on the API server for real use:
+									OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_ORG.
+								</p>
+							</CardContent>
+						</Card>
+
+						<Card className="bg-[#0f0f0f]/70 border-[#222]">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-lg">
+									<BoltIcon className="w-4 h-4" />
+									Anthropic
+								</CardTitle>
+							</CardHeader>
+							<CardContent className="space-y-3 text-sm text-[#d7d7d7]">
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										API key
+									</label>
+									<Input
+										type="password"
+										value={anthropicApiKey}
+										onChange={(e) => setAnthropicApiKey(e.target.value)}
+										placeholder="sk-ant-..."
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+									/>
+								</div>
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										Base URL
+									</label>
+									<Input
+										value={anthropicBaseUrl}
+										onChange={(e) => setAnthropicBaseUrl(e.target.value)}
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+									/>
+									<p className="text-xs text-[#8f8f8f]">
+										Use a gateway URL if you run through an internal proxy.
+									</p>
+								</div>
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										Default model
+									</label>
+									<Input
+										value={anthropicModel}
+										onChange={(e) => setAnthropicModel(e.target.value)}
+										placeholder="claude-3-5-sonnet-20241022"
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+									/>
+								</div>
+								<p className="text-xs text-[#8f8f8f]">
+									Map these to ANTHROPIC_API_KEY, ANTHROPIC_MODEL, and ANTHROPIC_BASE_URL
+									in your API server env.
+								</p>
+							</CardContent>
+						</Card>
+					</CardContent>
+				</Card>
 
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 					<Card className="bg-[#0f0f0f]/80 border-[#222] backdrop-blur">
