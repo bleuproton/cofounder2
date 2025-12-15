@@ -57,7 +57,7 @@ const App: React.FC = () => {
 													</a>
 												</section>
 												<h2 className="mt-4 text-2xl opacity-50 font-light text-center uppercase">
-													early alpha release
+													Warly alpha release
 												</h2>
 											</div>
 										</>
