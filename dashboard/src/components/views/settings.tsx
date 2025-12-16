@@ -542,12 +542,13 @@ const Settings: React.FC = () => {
 									<SelectItem value="uv">UV (low-glare)</SelectItem>
 								</SelectContent>
 							</Select>
-							<div className="flex items-center gap-2 text-xs text-[#b5b5c5]">
+							<div className="flex items-center justify-between rounded-lg border border-[#1f1f2a] bg-[#0f0f13] px-3 py-2 text-xs text-[#b5b5c5]">
 								<Switch
 									checked={themeChoice === "auto"}
 									onCheckedChange={(v) => setThemeChoice(v ? "auto" : "dark")}
+									className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-[#222]"
 								/>
-								<span>Follow system preference</span>
+								<span className="ml-3">Follow system preference</span>
 							</div>
 						</div>
 						<div className="grid grid-cols-2 gap-3 text-sm text-[#d7d7d7]">
