@@ -1,0 +1,10 @@
+# Environment files
+api/.env
+api/.env.*
+!api/.env.example
+
+# Dependencies / builds
+node_modules
+dist
+api/node_modules
+api/dist
