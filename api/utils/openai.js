@@ -3,21 +3,46 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 dotenv.config();
 
-let openai;
-try {
-	openai = new OpenAI({
-		apiKey: process.env.OPENAI_API_KEY,
+const buildClient = (overrides = {}) => {
+	const apiKey = overrides.apiKey ?? process.env.OPENAI_API_KEY;
+	if (!apiKey) {
+		console.warn("OpenAI client not configured: missing OPENAI_API_KEY");
+		return null;
+	}
+	return new OpenAI({
+		apiKey,
+		baseURL: overrides.baseURL ?? process.env.OPENAI_BASE_URL ?? undefined,
+		organization: overrides.organization ?? process.env.OPENAI_ORG ?? undefined,
 	});
-} catch (e) {
-	console.error("utils:openai : " + e);
-}
+};
+
+let openai = buildClient();
+
+const getClient = () => {
+	if (!openai) openai = buildClient();
+	return openai;
+};
+
+const ensureClient = () => {
+	const client = getClient();
+	if (!client) {
+		throw new Error("OpenAI is not configured. Set OPENAI_API_KEY first.");
+	}
+	return client;
+};
+
+const applySettings = ({ apiKey, baseURL, organization } = {}) => {
+	openai = buildClient({ apiKey, baseURL, organization });
+	return { ok: Boolean(openai) };
+};
 
 async function inference({
-	model = `gpt-4o-mini`,
+	model = process.env.OPENAI_MODEL || `gpt-4o-mini`,
 	messages,
 	stream = process.stdout,
 }) {
-	const streaming = await openai.chat.completions.create({
+	const client = ensureClient();
+	const streaming = await client.chat.completions.create({
 		model,
 		messages,
 		stream: true,
@@ -59,7 +84,8 @@ async function vectorize({
 	texts,
 	model = process.env.EMBEDDING_MODEL || `text-embedding-3-small`,
 }) {
-	const response = await openai.embeddings.create({
+	const client = ensureClient();
+	const response = await client.embeddings.create({
 		model,
 		input: texts,
 		encoding_format: "float",
@@ -74,7 +100,8 @@ async function vectorize({
 
 async function transcribe({ path }) {
 	console.dir({ "debug:utils:openai:transcribe:received": { path } });
-	const response = await openai.audio.transcriptions.create({
+	const client = ensureClient();
+	const response = await client.audio.transcriptions.create({
 		file: fs.createReadStream(path),
 		model: "whisper-1",
 	});
@@ -88,4 +115,6 @@ export default {
 	inference,
 	vectorize,
 	transcribe,
+	applySettings,
+	getClient,
 };

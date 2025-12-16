@@ -1,7 +1,38 @@
 import Anthropic from "@anthropic-ai/sdk";
 import dotenv from "dotenv";
 dotenv.config();
-const anthropic = new Anthropic();
+
+const buildClient = (overrides = {}) => {
+	const apiKey = overrides.apiKey ?? process.env.ANTHROPIC_API_KEY;
+	if (!apiKey) {
+		console.warn("Anthropic client not configured: missing ANTHROPIC_API_KEY");
+		return null;
+	}
+	return new Anthropic({
+		apiKey,
+		baseURL: overrides.baseURL ?? process.env.ANTHROPIC_BASE_URL ?? undefined,
+	});
+};
+
+let anthropic = buildClient();
+
+const getClient = () => {
+	if (!anthropic) anthropic = buildClient();
+	return anthropic;
+};
+
+const ensureClient = () => {
+	const client = getClient();
+	if (!client) {
+		throw new Error("Anthropic is not configured. Set ANTHROPIC_API_KEY first.");
+	}
+	return client;
+};
+
+const applySettings = ({ apiKey, baseURL } = {}) => {
+	anthropic = buildClient({ apiKey, baseURL });
+	return { ok: Boolean(anthropic) };
+};
 
 async function _convertFromOpenaiFormat({ messages }) {
 	const newMessages = (
@@ -40,7 +71,6 @@ async function _convertFromOpenaiFormat({ messages }) {
 								};
 							}
 							return false;
-							// else fetch url and convert
 						}),
 					)
 				).filter((e) => e);
@@ -66,50 +96,48 @@ async function inference({
 	messages,
 	stream = process.stdout,
 }) {
-	// messages are in openai format , need conversion
+	const client = ensureClient();
 	const converted = await _convertFromOpenaiFormat({ messages });
-	// console.dir({ "debug:utils:anthropic": {messages : converted.messages} } , {depth:null})
 
-const fallbackModel = process.env.ANTHROPIC_MODEL || "claude-3-haiku-20240307";
-const resolveModel = (requested) =>
-	requested && !requested.includes("gpt") ? requested : fallbackModel;
+	const fallbackModel = process.env.ANTHROPIC_MODEL || "claude-3-haiku-20240307";
+	const resolveModel = (requested) =>
+		requested && !requested.includes("gpt") ? requested : fallbackModel;
 
-let chosenModel = resolveModel(model);
-let streaming;
-const maxTokensFor = (m) => {
-	if (m.includes("haiku")) return 4096;
-	if (m.includes("sonnet")) return 8192;
-	if (m.includes("opus")) return 8192;
-	return 4096;
-};
-let maxTokens = maxTokensFor(chosenModel);
+	let chosenModel = resolveModel(model);
+	let streaming;
+	const maxTokensFor = (m) => {
+		if (m.includes("haiku")) return 4096;
+		if (m.includes("sonnet")) return 8192;
+		if (m.includes("opus")) return 8192;
+		return 4096;
+	};
+	let maxTokens = maxTokensFor(chosenModel);
 
-try {
-	streaming = await anthropic.messages.create({
-		model: chosenModel,
-		stream: true,
-		system: converted.system,
-		max_tokens: maxTokens,
-		messages: converted.messages,
-	});
-} catch (err) {
-	const notFound =
-		err?.error?.error?.type === "not_found_error" ||
-		err?.message?.includes("not_found_error");
-	if (notFound && chosenModel !== fallbackModel) {
-		// Retry once with the fallback model that is generally available.
-		chosenModel = fallbackModel;
-		maxTokens = maxTokensFor(chosenModel);
-		streaming = await anthropic.messages.create({
+	try {
+		streaming = await client.messages.create({
 			model: chosenModel,
 			stream: true,
 			system: converted.system,
 			max_tokens: maxTokens,
 			messages: converted.messages,
 		});
-	} else {
-		throw err;
-	}
+	} catch (err) {
+		const notFound =
+			err?.error?.error?.type === "not_found_error" ||
+			err?.message?.includes("not_found_error");
+		if (notFound && chosenModel !== fallbackModel) {
+			chosenModel = fallbackModel;
+			maxTokens = maxTokensFor(chosenModel);
+			streaming = await client.messages.create({
+				model: chosenModel,
+				stream: true,
+				system: converted.system,
+				max_tokens: maxTokens,
+				messages: converted.messages,
+			});
+		} else {
+			throw err;
+		}
 	}
 
 	let text = "";
@@ -150,4 +178,6 @@ try {
 
 export default {
 	inference,
+	applySettings,
+	getClient,
 };

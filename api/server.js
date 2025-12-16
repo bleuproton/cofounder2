@@ -13,6 +13,7 @@ import { merge } from "lodash-es";
 import open, { openApp, apps } from "open";
 import cofounder from "./build.js";
 import archiver from "archiver";
+import { loadApiSettings, persistApiSettings } from "@/utils/apiSettings.js";
 dotenv.config();
 
 // -------------------------------------------------------------- HELPERS  ------------------------
@@ -145,6 +146,51 @@ const server = app.listen(PORT, () => {
 
 app.get("/api/ping", (req, res) => {
 	res.status(200).json({ message: "pong" });
+});
+
+app.get("/api/settings/api", (req, res) => {
+	try {
+		const settings = loadApiSettings();
+		res.status(200).json(settings);
+	} catch (error) {
+		console.error("Failed to load API settings", error);
+		res.status(500).json({ error: "Failed to load API settings" });
+	}
+});
+
+app.post("/api/settings/api", (req, res) => {
+	try {
+		const payload = req.body || {};
+		const { saved } = persistApiSettings({
+			openAiApiKey: payload.openAiApiKey,
+			openAiBaseUrl: payload.openAiBaseUrl,
+			openAiModel: payload.openAiModel,
+			openAiOrg: payload.openAiOrg,
+			anthropicApiKey: payload.anthropicApiKey,
+			anthropicBaseUrl: payload.anthropicBaseUrl,
+			anthropicModel: payload.anthropicModel,
+		});
+
+		const runtimeEnv = { ...process.env, ...saved };
+		utils.openai.applySettings({
+			apiKey: runtimeEnv.OPENAI_API_KEY,
+			baseURL: runtimeEnv.OPENAI_BASE_URL,
+			organization: runtimeEnv.OPENAI_ORG,
+		});
+		utils.anthropic.applySettings({
+			apiKey: runtimeEnv.ANTHROPIC_API_KEY,
+			baseURL: runtimeEnv.ANTHROPIC_BASE_URL,
+		});
+
+		res.status(200).json({
+			saved: Object.keys(saved),
+		});
+	} catch (error) {
+		const message = error?.message || "Failed to persist API settings";
+		const status = message.includes("No settings provided") ? 400 : 500;
+		console.error("Failed to persist API settings", error);
+		res.status(status).json({ error: message });
+	}
 });
 
 app.get("/api/projects/list", (req, res) => {

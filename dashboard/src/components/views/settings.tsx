@@ -85,6 +85,12 @@ const Settings: React.FC = () => {
 	const [anthropicApiKey, setAnthropicApiKey] = useState<string>("");
 	const [anthropicBaseUrl, setAnthropicBaseUrl] = useState<string>("https://api.anthropic.com");
 	const [anthropicModel, setAnthropicModel] = useState<string>("claude-3-5-sonnet-20241022");
+	const SERVER_LOCAL_URL = "http://localhost:4200/api";
+	const [hasOpenAiKey, setHasOpenAiKey] = useState<boolean>(false);
+	const [hasAnthropicKey, setHasAnthropicKey] = useState<boolean>(false);
+	const [savingApiSettings, setSavingApiSettings] = useState<boolean>(false);
+	const [saveMessage, setSaveMessage] = useState<string>("");
+	const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
 
 	const projectBudgets = useMemo<ProjectBudget[]>(
 		() => [
@@ -269,6 +275,36 @@ const Settings: React.FC = () => {
 	);
 
 	useEffect(() => {
+		const fetchApiSettings = async () => {
+			try {
+				const res = await fetch(`${SERVER_LOCAL_URL}/settings/api`);
+				if (!res.ok) return;
+				const data = await res.json();
+				if (typeof data.openAiBaseUrl === "string" && data.openAiBaseUrl.length) {
+					setOpenAiBaseUrl(data.openAiBaseUrl);
+				}
+				if (typeof data.openAiModel === "string" && data.openAiModel.length) {
+					setOpenAiModel(data.openAiModel);
+				}
+				if (typeof data.openAiOrg === "string" && data.openAiOrg.length) {
+					setOpenAiOrg(data.openAiOrg);
+				}
+				if (typeof data.anthropicBaseUrl === "string" && data.anthropicBaseUrl.length) {
+					setAnthropicBaseUrl(data.anthropicBaseUrl);
+				}
+				if (typeof data.anthropicModel === "string" && data.anthropicModel.length) {
+					setAnthropicModel(data.anthropicModel);
+				}
+				setHasOpenAiKey(Boolean(data.hasOpenAiApiKey));
+				setHasAnthropicKey(Boolean(data.hasAnthropicApiKey));
+			} catch (error) {
+				console.error("Failed to load API settings", error);
+			}
+		};
+		fetchApiSettings();
+	}, []);
+
+	useEffect(() => {
 		const applyTheme = (choice: typeof themeChoice) => {
 			const root = document.documentElement;
 			const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
@@ -326,6 +362,48 @@ const Settings: React.FC = () => {
 		}
 		localStorage.setItem("cofounder-theme", themeChoice);
 	}, [themeChoice]);
+
+	const handleSaveApiSettings = async () => {
+		if (!apiUnlocked) return;
+		setSavingApiSettings(true);
+		setSaveMessage("");
+		setSaveStatus("idle");
+		try {
+			const response = await fetch(`${SERVER_LOCAL_URL}/settings/api`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					openAiApiKey: openAiApiKey.trim() || undefined,
+					openAiBaseUrl: openAiBaseUrl.trim() || undefined,
+					openAiModel: openAiModel.trim() || undefined,
+					openAiOrg: openAiOrg.trim() || undefined,
+					anthropicApiKey: anthropicApiKey.trim() || undefined,
+					anthropicBaseUrl: anthropicBaseUrl.trim() || undefined,
+					anthropicModel: anthropicModel.trim() || undefined,
+				}),
+			});
+			if (!response.ok) {
+				const data = await response.json().catch(() => ({}));
+				throw new Error(data.error || "Failed to save API settings");
+			}
+			setSaveStatus("success");
+			setSaveMessage("API settings saved and applied.");
+			if (openAiApiKey.trim()) setHasOpenAiKey(true);
+			if (anthropicApiKey.trim()) setHasAnthropicKey(true);
+			setOpenAiApiKey("");
+			setAnthropicApiKey("");
+		} catch (error: unknown) {
+			console.error("Failed to persist API settings", error);
+			const message =
+				error instanceof Error ? error.message : "Failed to save API settings";
+			setSaveStatus("error");
+			setSaveMessage(message);
+		} finally {
+			setSavingApiSettings(false);
+		}
+	};
 
 	return (
 		<div className="relative min-h-screen w-full text-white overflow-hidden">
@@ -608,22 +686,21 @@ const Settings: React.FC = () => {
 							<Button
 								variant="outline"
 								className="font-normal"
-								onClick={() => {
-									console.log("save api", {
-										openAiApiKey: openAiApiKey ? "***" : "",
-										openAiBaseUrl,
-										openAiModel,
-										openAiOrg,
-										anthropicApiKey: anthropicApiKey ? "***" : "",
-										anthropicBaseUrl,
-										anthropicModel,
-									});
-								}}
-								disabled={!apiUnlocked}
+								onClick={handleSaveApiSettings}
+								disabled={!apiUnlocked || savingApiSettings}
 							>
-								Save API settings
+								{savingApiSettings ? "Saving..." : "Save API settings"}
 							</Button>
 						</div>
+						{saveMessage && (
+							<p
+								className={`text-xs ${
+									saveStatus === "error" ? "text-red-300" : "text-emerald-300"
+								}`}
+							>
+								{saveMessage}
+							</p>
+						)}
 					</CardHeader>
 					<CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
 						<Card className="bg-[#0f0f0f]/70 border-[#222]">
@@ -646,6 +723,9 @@ const Settings: React.FC = () => {
 										className="bg-[#151515] border-[#2d2d2d] text-white"
 										disabled={!apiUnlocked}
 									/>
+									{hasOpenAiKey && !openAiApiKey && (
+										<p className="text-xs text-[#8d8da0]">Key saved on server</p>
+									)}
 								</div>
 								<div className="space-y-1">
 									<label className="text-xs uppercase tracking-wide text-[#999]">
@@ -713,6 +793,9 @@ const Settings: React.FC = () => {
 										className="bg-[#151515] border-[#2d2d2d] text-white"
 										disabled={!apiUnlocked}
 									/>
+									{hasAnthropicKey && !anthropicApiKey && (
+										<p className="text-xs text-[#8d8da0]">Key saved on server</p>
+									)}
 								</div>
 								<div className="space-y-1">
 									<label className="text-xs uppercase tracking-wide text-[#999]">
