@@ -85,9 +85,11 @@ const Settings: React.FC = () => {
 	const [anthropicApiKey, setAnthropicApiKey] = useState<string>("");
 	const [anthropicBaseUrl, setAnthropicBaseUrl] = useState<string>("https://api.anthropic.com");
 	const [anthropicModel, setAnthropicModel] = useState<string>("claude-3-5-sonnet-20241022");
+	const [cofounderApiKey, setCofounderApiKey] = useState<string>("");
 	const SERVER_LOCAL_URL = "http://localhost:4200/api";
 	const [hasOpenAiKey, setHasOpenAiKey] = useState<boolean>(false);
 	const [hasAnthropicKey, setHasAnthropicKey] = useState<boolean>(false);
+	const [hasCofounderKey, setHasCofounderKey] = useState<boolean>(false);
 	const [savingApiSettings, setSavingApiSettings] = useState<boolean>(false);
 	const [saveMessage, setSaveMessage] = useState<string>("");
 	const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
@@ -297,6 +299,7 @@ const Settings: React.FC = () => {
 				}
 				setHasOpenAiKey(Boolean(data.hasOpenAiApiKey));
 				setHasAnthropicKey(Boolean(data.hasAnthropicApiKey));
+				setHasCofounderKey(Boolean(data.hasCofounderApiKey));
 			} catch (error) {
 				console.error("Failed to load API settings", error);
 			}
@@ -382,6 +385,7 @@ const Settings: React.FC = () => {
 					anthropicApiKey: anthropicApiKey.trim() || undefined,
 					anthropicBaseUrl: anthropicBaseUrl.trim() || undefined,
 					anthropicModel: anthropicModel.trim() || undefined,
+					cofounderApiKey: cofounderApiKey.trim() || undefined,
 				}),
 			});
 			if (!response.ok) {
@@ -392,8 +396,10 @@ const Settings: React.FC = () => {
 			setSaveMessage("API settings saved and applied.");
 			if (openAiApiKey.trim()) setHasOpenAiKey(true);
 			if (anthropicApiKey.trim()) setHasAnthropicKey(true);
+			if (cofounderApiKey.trim()) setHasCofounderKey(true);
 			setOpenAiApiKey("");
 			setAnthropicApiKey("");
+			setCofounderApiKey("");
 		} catch (error: unknown) {
 			console.error("Failed to persist API settings", error);
 			const message =
@@ -826,6 +832,36 @@ const Settings: React.FC = () => {
 								<p className="text-xs text-[#8d8da0]">
 									Map to ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_BASE_URL in your API server env.
 								</p>
+							</CardContent>
+						</Card>
+
+						<Card className="bg-[#0f0f0f]/70 border-[#222]">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-lg">
+									<BoltIcon className="w-4 h-4" />
+									Cofounder API
+								</CardTitle>
+							</CardHeader>
+							<CardContent className="space-y-3 text-sm text-[#d7d7d7]">
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										API key
+									</label>
+									<Input
+										type="password"
+										value={cofounderApiKey}
+										onChange={(e) => setCofounderApiKey(e.target.value)}
+										placeholder="cofounder.openinterface.ai key"
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+										disabled={!apiUnlocked}
+									/>
+									{hasCofounderKey && !cofounderApiKey && (
+										<p className="text-xs text-[#8d8da0]">Key saved on server</p>
+									)}
+									<p className="text-xs text-[#8d8da0]">
+										Used for remote RAG and Cofounder API-powered features.
+									</p>
+								</div>
 							</CardContent>
 						</Card>
 					</CardContent>

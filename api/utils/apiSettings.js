@@ -15,6 +15,7 @@ const SETTINGS_KEYS = {
 	anthropicApiKey: "ANTHROPIC_API_KEY",
 	anthropicBaseUrl: "ANTHROPIC_BASE_URL",
 	anthropicModel: "ANTHROPIC_MODEL",
+	cofounderApiKey: "COFOUNDER_API_KEY",
 };
 
 function loadEnvFile() {
@@ -47,6 +48,7 @@ export function loadApiSettings() {
 		anthropicModel: resolved.ANTHROPIC_MODEL || "",
 		hasOpenAiApiKey: Boolean(resolved.OPENAI_API_KEY),
 		hasAnthropicApiKey: Boolean(resolved.ANTHROPIC_API_KEY),
+		hasCofounderApiKey: Boolean(resolved.COFOUNDER_API_KEY),
 	};
 }
 
