@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
 	Card,
 	CardContent,
@@ -77,6 +77,14 @@ const Settings: React.FC = () => {
 	const [alertingEnabled, setAlertingEnabled] = useState<boolean>(true);
 	const [killSwitchEnabled, setKillSwitchEnabled] = useState<boolean>(true);
 	const [themeChoice, setThemeChoice] = useState<"auto" | "dark" | "light" | "uv">("dark");
+	const [apiUnlocked, setApiUnlocked] = useState<boolean>(false);
+	const [openAiApiKey, setOpenAiApiKey] = useState<string>("");
+	const [openAiBaseUrl, setOpenAiBaseUrl] = useState<string>("https://api.openai.com/v1");
+	const [openAiModel, setOpenAiModel] = useState<string>("gpt-4o-mini");
+	const [openAiOrg, setOpenAiOrg] = useState<string>("");
+	const [anthropicApiKey, setAnthropicApiKey] = useState<string>("");
+	const [anthropicBaseUrl, setAnthropicBaseUrl] = useState<string>("https://api.anthropic.com");
+	const [anthropicModel, setAnthropicModel] = useState<string>("claude-3-5-sonnet-20241022");
 
 	const projectBudgets = useMemo<ProjectBudget[]>(
 		() => [
@@ -569,6 +577,174 @@ const Settings: React.FC = () => {
 								<p className="text-lg font-semibold">Follows OS setting</p>
 							</div>
 						</div>
+					</CardContent>
+				</Card>
+
+				<Card className="bg-[#0b0b0b]/90 border-[#1f1f1f] relative overflow-hidden">
+					{!apiUnlocked && (
+						<div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-10 gap-3">
+							<p className="text-sm text-white">API settings are locked</p>
+							<Button onClick={() => setApiUnlocked(true)} className="font-normal">
+								Unlock to edit
+							</Button>
+						</div>
+					)}
+					<CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+						<div>
+							<CardTitle className="text-lg">API settings</CardTitle>
+							<p className="text-sm text-[#a5a5a5]">
+								Manage OpenAI and Anthropic credentials and endpoints. Unlock to edit; remember to persist
+								to your backend or env vars.
+							</p>
+						</div>
+						<div className="flex gap-2">
+							<Button
+								variant={apiUnlocked ? "secondary" : "default"}
+								className="font-normal"
+								onClick={() => setApiUnlocked(true)}
+							>
+								{apiUnlocked ? "Unlocked" : "Unlock"}
+							</Button>
+							<Button
+								variant="outline"
+								className="font-normal"
+								onClick={() => {
+									console.log("save api", {
+										openAiApiKey: openAiApiKey ? "***" : "",
+										openAiBaseUrl,
+										openAiModel,
+										openAiOrg,
+										anthropicApiKey: anthropicApiKey ? "***" : "",
+										anthropicBaseUrl,
+										anthropicModel,
+									});
+								}}
+								disabled={!apiUnlocked}
+							>
+								Save API settings
+							</Button>
+						</div>
+					</CardHeader>
+					<CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+						<Card className="bg-[#0f0f0f]/70 border-[#222]">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-lg">
+									<BoltIcon className="w-4 h-4" />
+									OpenAI
+								</CardTitle>
+							</CardHeader>
+							<CardContent className="space-y-3 text-sm text-[#d7d7d7]">
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										API key
+									</label>
+									<Input
+										type="password"
+										value={openAiApiKey}
+										onChange={(e) => setOpenAiApiKey(e.target.value)}
+										placeholder="sk-..."
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+										disabled={!apiUnlocked}
+									/>
+								</div>
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										Base URL
+									</label>
+									<Input
+										value={openAiBaseUrl}
+										onChange={(e) => setOpenAiBaseUrl(e.target.value)}
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+										disabled={!apiUnlocked}
+									/>
+									<p className="text-xs text-[#8d8da0]">
+										Set this to a proxy if you route traffic internally.
+									</p>
+								</div>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+									<div className="space-y-1">
+										<label className="text-xs uppercase tracking-wide text-[#999]">
+											Default model
+										</label>
+										<Input
+											value={openAiModel}
+											onChange={(e) => setOpenAiModel(e.target.value)}
+											placeholder="gpt-4o-mini"
+											className="bg-[#151515] border-[#2d2d2d] text-white"
+											disabled={!apiUnlocked}
+										/>
+									</div>
+									<div className="space-y-1">
+										<label className="text-xs uppercase tracking-wide text-[#999]">
+											Org / Project
+										</label>
+										<Input
+											value={openAiOrg}
+											onChange={(e) => setOpenAiOrg(e.target.value)}
+											placeholder="org_..."
+											className="bg-[#151515] border-[#2d2d2d] text-white"
+											disabled={!apiUnlocked}
+										/>
+									</div>
+								</div>
+								<p className="text-xs text-[#8d8da0]">
+									Map to OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_ORG in your API server env.
+								</p>
+							</CardContent>
+						</Card>
+
+						<Card className="bg-[#0f0f0f]/70 border-[#222]">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-lg">
+									<BoltIcon className="w-4 h-4" />
+									Anthropic
+								</CardTitle>
+							</CardHeader>
+							<CardContent className="space-y-3 text-sm text-[#d7d7d7]">
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										API key
+									</label>
+									<Input
+										type="password"
+										value={anthropicApiKey}
+										onChange={(e) => setAnthropicApiKey(e.target.value)}
+										placeholder="sk-ant-..."
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+										disabled={!apiUnlocked}
+									/>
+								</div>
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										Base URL
+									</label>
+									<Input
+										value={anthropicBaseUrl}
+										onChange={(e) => setAnthropicBaseUrl(e.target.value)}
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+										disabled={!apiUnlocked}
+									/>
+									<p className="text-xs text-[#8d8da0]">
+										Use a gateway URL if you run through an internal proxy.
+									</p>
+								</div>
+								<div className="space-y-1">
+									<label className="text-xs uppercase tracking-wide text-[#999]">
+										Default model
+									</label>
+									<Input
+										value={anthropicModel}
+										onChange={(e) => setAnthropicModel(e.target.value)}
+										placeholder="claude-3-5-sonnet-20241022"
+										className="bg-[#151515] border-[#2d2d2d] text-white"
+										disabled={!apiUnlocked}
+									/>
+								</div>
+								<p className="text-xs text-[#8d8da0]">
+									Map to ANTHROPIC_API_KEY, ANTHROPIC_MODEL, ANTHROPIC_BASE_URL in your API server env.
+								</p>
+							</CardContent>
+						</Card>
 					</CardContent>
 				</Card>
 

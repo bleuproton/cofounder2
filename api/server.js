@@ -12,6 +12,7 @@ import { hideBin } from "yargs/helpers";
 import { merge } from "lodash-es";
 import open, { openApp, apps } from "open";
 import cofounder from "./build.js";
+import archiver from "archiver";
 dotenv.config();
 
 // -------------------------------------------------------------- HELPERS  ------------------------
@@ -242,6 +243,33 @@ app.post("/api/editor/file", (req, res) => {
 		res.status(200).json({ saved: true });
 	} catch (e) {
 		res.status(500).json({ error: e.message || "Failed to save file" });
+	}
+});
+
+app.get("/api/projects/export/:project", (req, res) => {
+	try {
+		const project = req.params.project;
+		const { base } = safeProjectPath(project);
+		if (!fs.existsSync(base) || !fs.statSync(base).isDirectory()) {
+			return res.status(404).json({ error: "project not found" });
+		}
+		res.setHeader(
+			"Content-Disposition",
+			`attachment; filename="${project}.zip"`,
+		);
+		res.setHeader("Content-Type", "application/zip");
+
+		const archive = archiver("zip", { zlib: { level: 9 } });
+		archive.on("error", (err) => {
+			console.error("zip error", err);
+			res.status(500).end();
+		});
+		archive.pipe(res);
+		archive.directory(base, project);
+		archive.finalize();
+	} catch (e) {
+		console.error("export error", e);
+		res.status(500).json({ error: e.message || "Failed to export project" });
 	}
 });
 

@@ -63,6 +63,28 @@ be patient :)
 
 ---
 
+# What the dashboard can do now (alpha)
+
+- Token & cost control: workspace/project/run hard budgets, kill-switch, concurrency caps, logging/alerts, live spend, project ledger, recent runs per node.
+- Theme chooser: quick Dark / Light / Auto / UV (low-glare) with “follow system” toggle.
+- API settings (locked by default): unlock to edit OpenAI and Anthropic keys/base URLs/models; ready to persist to your backend/env.
+- Project IDE (Editor tab): Monaco-based editor with project-aware file tree, auto-save/manual save, status console; uses `/api/editor/files` and `/api/editor/file` (GET/POST).
+- Component Designer: same embedded IDE when opened standalone; pick project, edit files.
+- Export tab: one-click ZIP export via `/api/projects/export/:project` (compatible with VS Code/code-server/JetBrains).
+- Project flows: Blueprint + Events remain; Live tab iframe stays available.
+
+API endpoints added for IDE/export:
+- `GET /api/editor/files?project=<id>` → list files (safe, excludes node_modules/.git)
+- `GET /api/editor/file?project=<id>&path=<file>` → read file
+- `POST /api/editor/file` `{ project, path, content }` → save file
+- `GET /api/projects/export/:project` → stream ZIP of the project folder
+
+Notes:
+- The dashboard serves from `api/dist` after `npm run build` in `dashboard/`.
+- API must be running at `http://localhost:4200/api` for the dashboard to function.
+
+---
+
 # Usage
 
 ## Install & Init

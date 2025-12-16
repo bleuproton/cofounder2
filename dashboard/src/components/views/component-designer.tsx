@@ -19,10 +19,18 @@ import {
 	ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 
-const ComponentDesigner: React.FC = () => {
+type ComponentDesignerProps = {
+	projectId?: string;
+	hideProjectPicker?: boolean;
+};
+
+const ComponentDesigner: React.FC<ComponentDesignerProps> = ({
+	projectId,
+	hideProjectPicker = false,
+}) => {
 	const SERVER_LOCAL_URL = "http://localhost:4200/api";
 	const [projects, setProjects] = useState<{ id: string }[]>([]);
-	const [selectedProject, setSelectedProject] = useState<string>("");
+	const [selectedProject, setSelectedProject] = useState<string>(projectId || "");
 	const [files, setFiles] = useState<{ path: string }[]>([]);
 	const [filter, setFilter] = useState("");
 	const [selectedFile, setSelectedFile] = useState<string>("");
@@ -35,12 +43,18 @@ const ComponentDesigner: React.FC = () => {
 	const saveTimer = useRef<NodeJS.Timeout | null>(null);
 
 	useEffect(() => {
+		if (projectId) {
+			setSelectedProject(projectId);
+		}
+	}, [projectId]);
+
+	useEffect(() => {
 		const fetchProjects = async () => {
 			try {
 				const res = await fetch(`${SERVER_LOCAL_URL}/projects/list`);
 				const data = await res.json();
 				setProjects(data.projects || []);
-				if ((data.projects || []).length && !selectedProject) {
+				if ((data.projects || []).length && !selectedProject && !projectId) {
 					setSelectedProject(data.projects[0].id);
 				}
 			} catch (e) {
@@ -48,7 +62,7 @@ const ComponentDesigner: React.FC = () => {
 			}
 		};
 		fetchProjects();
-	}, []);
+	}, [projectId, selectedProject]);
 
 	useEffect(() => {
 		if (!selectedProject) return;
@@ -203,21 +217,23 @@ const ComponentDesigner: React.FC = () => {
 					<CardContent className="space-y-4 text-sm text-[#d7d7e0]">
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
 							<div className="md:col-span-1 space-y-3">
-								<div className="space-y-1">
-									<p className="text-xs uppercase tracking-wide text-[#8d8da0]">Project</p>
-									<select
-										value={selectedProject}
-										onChange={(e) => setSelectedProject(e.target.value)}
-										className="w-full bg-[#12121a] border border-[#1f1f2a] rounded-md px-3 py-2 text-sm"
-									>
-										{!selectedProject && <option value="">Select a project</option>}
-										{projects.map((p) => (
-											<option key={p.id} value={p.id}>
-												{p.id}
-											</option>
-										))}
-									</select>
-								</div>
+								{!hideProjectPicker && (
+									<div className="space-y-1">
+										<p className="text-xs uppercase tracking-wide text-[#8d8da0]">Project</p>
+										<select
+											value={selectedProject}
+											onChange={(e) => setSelectedProject(e.target.value)}
+											className="w-full bg-[#12121a] border border-[#1f1f2a] rounded-md px-3 py-2 text-sm"
+										>
+											{!selectedProject && <option value="">Select a project</option>}
+											{projects.map((p) => (
+												<option key={p.id} value={p.id}>
+													{p.id}
+												</option>
+											))}
+										</select>
+									</div>
+								)}
 								<Input
 									placeholder="Filter files"
 									className="bg-[#12121a] border-[#1f1f2a] text-white"

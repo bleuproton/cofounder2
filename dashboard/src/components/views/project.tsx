@@ -7,7 +7,16 @@ import { resetProject } from "@/store/main";
 
 import Flow from "@/components/views/flow.tsx";
 import Events from "@/components/views/events.tsx";
+import ComponentDesigner from "@/components/views/component-designer.tsx";
 import { ExternalLink } from "lucide-react";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { DownloadIcon } from "lucide-react";
 
 const Project: React.FC = () => {
 	const { project } = useParams();
@@ -138,14 +147,48 @@ const Project: React.FC = () => {
 					</div>
 
 					<div className={tab === "editor" ? "" : "hidden"}>
-						<div className="flex items-center justify-center h-screen w-full text-white">
-							<h1 className="text-2xl font-light opacity-50 text-center">{`{ editor : not implemented yet }`}</h1>
-						</div>
+						<ComponentDesigner projectId={project || ""} hideProjectPicker />
 					</div>
 
 					<div className={tab === "export" ? "" : "hidden"}>
-						<div className="flex items-center justify-center h-screen w-full text-white">
-							<h1 className="text-2xl font-light opacity-50 text-center">{`{ export : not implemented yet }`}</h1>
+						<div className="w-full flex justify-center">
+							<div className="container max-w-4xl text-white px-4 py-10">
+								<Card className="bg-[#0f0f0f]/80 border-[#1f1f1f]">
+									<CardHeader>
+										<CardTitle className="text-xl font-semibold">
+											Export project
+										</CardTitle>
+									</CardHeader>
+									<CardContent className="space-y-4 text-sm text-[#d7d7d7]">
+										<p>
+											Download this project as a ZIP that works in external editors
+											(VS Code, code-server, JetBrains). All files under the project
+											folder are included.
+										</p>
+										<div className="flex flex-wrap gap-3">
+											<Button
+												className="flex items-center gap-2"
+												onClick={() => {
+													if (!project) return;
+													const url = `${SERVER_LOCAL_URL}/projects/export/${project}?t=${Date.now()}`;
+													window.open(url, "_blank");
+												}}
+											>
+												<DownloadIcon className="w-4 h-4" />
+												Download ZIP
+											</Button>
+										</div>
+										<div className="rounded-lg border border-[#1f1f1f] bg-[#111]/70 p-3 text-xs text-[#b5b5b5] space-y-2">
+											<p className="text-white font-semibold">Tips</p>
+											<ul className="list-disc list-inside space-y-1">
+												<li>Unzip and open the folder in your editor of choice.</li>
+												<li>Run <code className="bg-[#151515] px-1 py-0.5 rounded border border-[#222]">npm install</code> then <code className="bg-[#151515] px-1 py-0.5 rounded border border-[#222]">npm run dev</code> for the app.</li>
+												<li>Backend files are under <code className="bg-[#151515] px-1 py-0.5 rounded border border-[#222]">db/projects/{project}</code>.</li>
+											</ul>
+										</div>
+									</CardContent>
+								</Card>
+							</div>
 						</div>
 					</div>
 

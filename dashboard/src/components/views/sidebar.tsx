@@ -140,6 +140,20 @@ const Sidebar: React.FC = () => {
 						</TooltipContent>
 					</Tooltip>
 				</TooltipProvider>
+
+				{!isCollapsed && (
+					<div className="mt-2 border-t border-[#1a1a1a]">
+						<div className="flex items-center justify-between p-3 text-xs text-[#b5b5b5]">
+							<span>Theme</span>
+							<Link
+								to="/settings"
+								className="px-2 py-1 rounded border border-[#2a2a2a] bg-[#111] text-[#ccc] hover:bg-[#1a1a1a]"
+							>
+								Open
+							</Link>
+						</div>
+					</div>
+				)}
 			</nav>
 		</motion.div>
 	);
