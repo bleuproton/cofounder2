@@ -8,6 +8,7 @@ import {
 	PlayIcon,
 	Cog6ToothIcon,
 	Squares2X2Icon,
+	HomeIcon,
 } from "@heroicons/react/24/outline";
 import {
 	Tooltip,
@@ -61,6 +62,20 @@ const Sidebar: React.FC = () => {
 			</div>
 
 			<nav className="mt-4">
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Link to="/" className="flex items-center p-3 hover:bg-[#1a1a1a]">
+								<HomeIcon className="w-3 h-3 text-[#bbb]" />
+								{!isCollapsed && <span className="ml-3">Home</span>}
+							</Link>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>Go to Home</p>
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger asChild>
