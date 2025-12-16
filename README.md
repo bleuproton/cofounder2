@@ -198,6 +198,17 @@ The default LLM concurrency is set to `2` so you can see what's happening in you
 
 ---
 
+# How to extend from here
+
+- Persist API settings: wire the Settings “Save API settings” to write env vars or a secure secrets store; reload the API server to apply.
+- Wire build/test buttons: in the Editor/Designer views, connect “Run build”/“Run tests” to backend commands (e.g., spawn npm scripts) and stream logs back to the console panel.
+- Add file create/delete: implement `/api/editor/create` and `/api/editor/delete` using the same path safety as the read/write endpoints.
+- CI-ready exports: extend the Export tab to include a checksum/SHA and optional CI templates for building/deploying the ZIP.
+- Auth: gate the dashboard and API endpoints with auth (JWT/basic) before exposing remotely.
+- Theming: connect the theme choice to a global provider so previews/iframes follow the same theme.
+
+---
+
 # Changelog
 
 ---
