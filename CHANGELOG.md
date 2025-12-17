@@ -64,6 +64,11 @@
 - **Reasoning:** Introduced a Theia-based IDE skeleton as a thin client to the engine: UI adapts to engine modes, shows mode/capabilities, triggers agent runs, and sandbox start/stop via HTTP. Policies remain enforced in the engine; the IDE cannot override CPS or modes. Theia chosen for extensibility and easy feature gating (hide terminal/explorer in guided, limit in builder, full in developer).
 - **Impact:** Provides a foundation for an AI-first orchestration UI without weakening engine security. Terminal/shell omitted in guided/builder, and file actions remain governed by engine endpoints. Deployment, terminals, and full editor wiring are intentionally deferred for safety.
 
+## 2025-12-19 — Cofounder Studio doc update (mode-driven UI, thin-client scope)
+- **Files modified:** `ide/README.md`, `CHANGELOG.md`
+- **Reasoning:** Documented the IDE folder layout, widget behavior, and mode-based UI gating to reinforce that Studio is a strict client of the engine. Theia is kept for extensibility and feature gating; modes are respected from engine responses, not overridden by UI. Excluded unrestricted terminals and direct file access to maintain CPS/policy safety.
+- **Impact:** Clearer guidance for IDE consumers (web/desktop) without changing engine behavior or policies; future work (full editor wiring, packaging) remains out of scope for this MVP.
+
 ## 2024-11-20 — [Retroactive Entry] Engine HTTP Surface & Contracts
 - **Files added:** `engine/api/server.ts`, `engine/contracts/http.md`
 - **Files modified:** `Change.md`

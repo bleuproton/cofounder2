@@ -2,6 +2,21 @@
 
 Thin client for the headless engine. This IDE adapts UI to engine mode and never bypasses engine policies.
 
+## Folder structure
+```
+ide/
+  package.json
+  tsconfig.base.json
+  README.md
+  packages/
+    cofounder-extension/
+      package.json
+      tsconfig.json
+      src/browser/
+        cofounder-frontend-module.ts   # registers the widget
+        cofounder-widget.tsx           # custom panel (mode, agent, sandbox, logs)
+```
+
 ## Why Theia
 - Open, extensible, Electron-ready.
 - Easy to disable terminals/explorer based on mode.
@@ -29,3 +44,10 @@ npm run build
 ## Safety
 - No direct file writes; all mutations go through engine endpoints.
 - CPS and policies stay server-side; the IDE is read-only on mode data and adapts UI accordingly.
+
+## Example UI flow (widget)
+- Select project ID and service.
+- Mode display (read-only) with capabilities JSON (from `/engine/mode/current`).
+- Agent run: submit task + unified diff → POST `/engine/agents/run` → shows result/log.
+- Sandbox controls: POST `/engine/sandbox/start|stop` → shows status/log.
+- Logs/results panel: renders last responses; no shell/terminal exposed.
