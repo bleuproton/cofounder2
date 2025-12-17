@@ -1,0 +1,15 @@
+{
+  "name": "cofounder-extension",
+  "version": "0.0.1",
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/cofounder-frontend-module"
+    }
+  ],
+  "dependencies": {
+    "@theia/core": "^1.43.0",
+    "@theia/plugin": "^1.43.0",
+    "@theia/plugin-ext": "^1.43.0",
+    "inversify": "^6.0.1"
+  }
+}

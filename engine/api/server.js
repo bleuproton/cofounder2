@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import { decideArchitecture } from "../architecture/decider.js";
 import { generateProjectContract } from "../projects/contractGenerator.js";
 import adapters from "../adapters/index.js";
+import agentRuntime from "../agents/runtime.js";
+import policies from "../policies/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -116,6 +118,48 @@ app.post("/engine/adapters/scaffold", (req, res) => {
 	} catch (error) {
 		res.status(400).json({ error: error?.message || "failed to scaffold" });
 	}
+});
+
+app.post("/engine/agents/run", (req, res) => {
+	try {
+		const { projectId, service, task, diff } = req.body || {};
+		if (!diff) {
+			return res.status(400).json({ error: "diff (unified diff) is required" });
+		}
+		const run = agentRuntime.runAgentTask({
+			projectId,
+			service,
+			task,
+			diffText: diff,
+		});
+		res.status(200).json(run);
+	} catch (error) {
+		res.status(400).json({ error: error?.message || "failed to run agent task" });
+	}
+});
+
+app.get("/engine/agents/runs/:id", (req, res) => {
+	const run = agentRuntime.getRun(req.params.id);
+	if (!run) return res.status(404).json({ error: "run not found" });
+	res.status(200).json(run);
+});
+
+app.post("/engine/mode/set", (req, res) => {
+	try {
+		const { projectId, mode } = req.body || {};
+		if (!projectId) return res.status(400).json({ error: "projectId is required" });
+		if (!mode) return res.status(400).json({ error: "mode is required" });
+		const m = policies.setMode({ projectId, mode });
+		res.status(200).json({ projectId, mode: m.name, capabilities: m.allow });
+	} catch (error) {
+		res.status(400).json({ error: error?.message || "failed to set mode" });
+	}
+});
+
+app.get("/engine/mode/current", (req, res) => {
+	const projectId = req.query.projectId;
+	const m = policies.getMode(projectId);
+	res.status(200).json({ projectId: projectId || null, mode: m.name, capabilities: m.allow });
 });
 
 app.listen(PORT, () => {

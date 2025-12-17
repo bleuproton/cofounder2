@@ -47,6 +47,23 @@
 - **Reasoning:** Enforced a canonical, versioned project layout (structureVersion 1.0) with `cofounder.json` at project root and `service.json` per service, under `services/`. Adapters now scaffold only inside the allowed CPS paths and fail on violations. AI is intentionally excluded from structure decisions to keep repeatability and tooling safety; frameworks are nested under services to keep UI/backend symmetry and isolation.
 - **Impact:** Safer scaffolding for IDEs/agents/sandbox: deterministic paths, manifests, and validation during scaffold. Enables future automated checks, adapters, and runners without risking UI coupling. Deferred databases, deploy/Docker, and business logic.
 
+## 2025-12-18 — Agent Runtime v1 (diff-based, CPS-safe)
+- **Files added:** `engine/agents/diff.js`, `engine/agents/runtime.js`
+- **Files modified:** `engine/api/server.js`, `engine/api/server.ts`, `engine/adapters/index.js`, `CHANGELOG.md`
+- **Reasoning:** Introduced a diff-based Agent Runtime that only applies validated changes inside `services/<service>/src`, enforcing CPS boundaries and forbidding structure edits, manifest changes, deletes, or shell execution. Diffs are required; AI does not write files directly. CPS rules prevent agents from bypassing project layout.
+- **Impact:** Enables `POST /engine/agents/run` / `GET /engine/agents/runs/:id` for controlled agent edits, with explicit errors on violations. Sets the stage for IDE/agent workflows while preserving safety and determinism.
+
+## 2025-12-18 — Policies & Modes v1 (engine-enforced)
+- **Files added:** `engine/policies/index.js`
+- **Files modified:** `engine/agents/runtime.js`, `engine/agents/diff.js`, `engine/api/server.js`, `engine/api/server.ts`, `CHANGELOG.md`
+- **Reasoning:** Added engine-level policy enforcement with fixed modes (`guided`, `builder`, `developer`) to control capabilities (agent.run, agent.applyDiff, sandbox, file ops, service run). Policies live in the engine so UI cannot override them; AI codegen is still disallowed from changing structure. File deletes remain forbidden except in `developer` mode and still constrained to src paths.
+- **Impact:** Mode-aware endpoints (`/engine/mode/set`, `/engine/mode/current`) and capability checks gate all agent diff application. This keeps CPS intact, blocks structure/manifest edits, and enables IDE/non-coder safety while preparing for future sandbox/service controls. No breaking changes to web app.
+
+## 2025-12-18 — Cofounder Studio (Theia-based MVP, thin client)
+- **Files added:** `ide/README.md`, `ide/package.json`, `ide/tsconfig.base.json`, `ide/packages/cofounder-extension/package.json`, `ide/packages/cofounder-extension/tsconfig.json`, `ide/packages/cofounder-extension/src/browser/cofounder-frontend-module.ts`, `ide/packages/cofounder-extension/src/browser/cofounder-widget.tsx`
+- **Reasoning:** Introduced a Theia-based IDE skeleton as a thin client to the engine: UI adapts to engine modes, shows mode/capabilities, triggers agent runs, and sandbox start/stop via HTTP. Policies remain enforced in the engine; the IDE cannot override CPS or modes. Theia chosen for extensibility and easy feature gating (hide terminal/explorer in guided, limit in builder, full in developer).
+- **Impact:** Provides a foundation for an AI-first orchestration UI without weakening engine security. Terminal/shell omitted in guided/builder, and file actions remain governed by engine endpoints. Deployment, terminals, and full editor wiring are intentionally deferred for safety.
+
 ## 2024-11-20 — [Retroactive Entry] Engine HTTP Surface & Contracts
 - **Files added:** `engine/api/server.ts`, `engine/contracts/http.md`
 - **Files modified:** `Change.md`
