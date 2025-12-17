@@ -30,6 +30,11 @@
 - **Reasoning:** Provide a native JS entrypoint to run the headless engine without experimental flags or TS loaders, improving reliability for local/test runs while keeping the TypeScript source available.
 - **Impact:** Simplifies `npm start` and `node api/server.js` execution; avoids missing-dependency/loader errors. Deferred any refactor of the existing `.ts` source until a full TS toolchain is adopted.
 
+## 2025-12-17 — Engine README update (usage & intent)
+- **Files modified:** `README.md`
+- **Reasoning:** Documented how to operate the headless engine (start/stop, endpoints, purpose, layering rationale) to keep UI coupling out and make it consumable by web/IDE/iOS clients.
+- **Impact:** Clarifies run instructions and intent; no runtime changes.
+
 ## 2024-11-20 — [Retroactive Entry] Engine HTTP Surface & Contracts
 - **Files added:** `engine/api/server.ts`, `engine/contracts/http.md`
 - **Files modified:** `Change.md`

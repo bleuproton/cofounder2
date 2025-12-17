@@ -10,6 +10,11 @@ Cofounder is een experimentele generator voor full‑stack webapps. De `api/` ma
 - `api/` – Express + Socket.IO server, runtime voor de generator, stores in `db/projects/<id>`, serveert het dashboard uit `api/dist`.
 - `dashboard/` – Vite + React dashboard (Monaco-editor, flow/console, export, settings). `npm run build` schrijft naar `../api/dist`.
 - `boilerplate/` – Bron voor de app die wordt uitgespuugd (`backend/` Express + PGlite, `vitereact/` Vite + React + GenUI plugin) en een root `package.json` met een `dev` script dat beide start.
+- `engine/` – Headless engine (UI-agnostisch) die over HTTP wordt aangeroepen door web/IDE/iOS. Bevat:
+  - `api/server.js` – standalone entrypoint (health, projects, ADE, contracts).
+  - `architecture/decider.js` – Architecture Decision Engine (deterministische stackkeuze).
+  - `projects/contractGenerator.js` – Project Contract Generator (services/commands/ports).
+  - `contracts/http.md` – HTTP contract voor clients (geen UI types).
 
 ## Vereisten
 - Node 20+ (gebruikt is 22) en npm.
@@ -53,6 +58,27 @@ Cofounder is een experimentele generator voor full‑stack webapps. De `api/` ma
    npm run start
    ```
    Server draait op `http://localhost:4200` en opent automatisch een browser.
+
+### Headless engine starten
+- Eenmalig: `cd engine && npm install`
+- Run: `cd engine && node api/server.js` (of `ENGINE_PORT=4300 node api/server.js`)
+- Health check: `curl -s http://localhost:4300/health`
+- Stoppen: Ctrl+C in de terminal (of kill het proces id).
+- Dev/debug: pure Node; geen browser/React/Next nodig.
+
+### Headless engine endpoints (HTTP-only)
+- `POST /engine/architecture/decide` – input: `{ intent }`; output: `decision { id, frontendStack, backendStack, reasoning[], confidence }`.
+- `POST /engine/projects/contract` – input: `{ decision }`; output: `contract { services, commands, ports, relationships, stacks, languages }`.
+- `POST /engine/projects` – input: `{ intent, name? }`; output: `{ project }` (in-memory).
+- `GET /health` – status.
+
+### Wat en waarom (engine gedachtegang)
+- UI-agnostisch: alle interactie via HTTP-contracten (`engine/contracts/http.md`); geen React/Vite/Next types in de engine.
+- Laagjes:
+  - ADE: kiest stacks (node-nextjs, node-vite, python-fastapi) op basis van intent + signalen, met uitleg en confidence.
+  - Project Contract: vertaalt een ADE decision naar een uitvoerbaar contract (services/commands/ports/relaties), nog zonder DB of deploy-aanname.
+  - Project intent logging: eenvoudige in-memory registratie van intent (geen persistence).
+- Reden scheiding: “wat” (stack/architectuur) scheiden van “hoe” (contract/run-cmds), en UI loskoppelen zodat web/IDE/iOS dezelfde engine kunnen gebruiken.
 
 ## Nieuwe projecten maken
 - **Via dashboard**: ga naar `http://localhost:4200`, tab “Projects” → “New Project”. Voer id, beschrijving (verplicht) en optioneel aesthetics in. De flow draait de DAG uit `api/system/structure/sequences/projectInit.yaml` en streamt naar het blueprint/console-scherm.
