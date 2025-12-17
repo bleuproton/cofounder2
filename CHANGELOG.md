@@ -24,6 +24,12 @@
 - **Reasoning:** Added a deterministic, ADE-driven Project Contract layer to describe services/stacks/commands/ports for supported stacks (`node-nextjs`, `node-vite`, `python-fastapi`). Kept it separate from ADE to cleanly layer decision (what to build) from contract (how to run/build services) and to avoid UI coupling.
 - **Impact:** Provides a structured contract over HTTP (`POST /engine/projects/contract`) for downstream scaffolding/adapters/sandbox work; intentionally deferred databases, deployment targets, and any code generation.
 
+## 2024-11-20 — Engine Runtime Entry Fix
+- **Files added:** `engine/api/server.js`
+- **Files modified:** `engine/package.json`, `CHANGELOG.md`
+- **Reasoning:** Provide a native JS entrypoint to run the headless engine without experimental flags or TS loaders, improving reliability for local/test runs while keeping the TypeScript source available.
+- **Impact:** Simplifies `npm start` and `node api/server.js` execution; avoids missing-dependency/loader errors. Deferred any refactor of the existing `.ts` source until a full TS toolchain is adopted.
+
 ## 2024-11-20 — [Retroactive Entry] Engine HTTP Surface & Contracts
 - **Files added:** `engine/api/server.ts`, `engine/contracts/http.md`
 - **Files modified:** `Change.md`
