@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { decideArchitecture } from "../architecture/decider.js";
+import { generateProjectContract } from "../projects/contractGenerator.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,6 +81,23 @@ app.post("/engine/architecture/decide", (req, res) => {
 		res
 			.status(500)
 			.json({ error: error?.message || "failed to run architecture decision" });
+	}
+});
+
+app.post("/engine/projects/contract", (req, res) => {
+	try {
+		const { decision } = req.body || {};
+		if (!decision) {
+			return res
+				.status(400)
+				.json({ error: "decision object from ADE is required" });
+		}
+		const contract = generateProjectContract(decision);
+		res.status(200).json({ contract });
+	} catch (error) {
+		res.status(400).json({
+			error: error?.message || "failed to generate project contract",
+		});
 	}
 });
 

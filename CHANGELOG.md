@@ -18,6 +18,12 @@
 - **Reasoning:** Introduced the first ADE logic to keep stack selection deterministic and explainable (only `node-nextjs`, `node-vite`, `python-fastapi`), exposed via `POST /engine/architecture/decide`, and documented the HTTP boundary so clients consume the engine over HTTP without UI coupling. Updated existing server wiring and change documentation to reflect the new endpoint and contract.
 - **Impact:** Enabled architecture recommendations over HTTP for all clients; deferred code scaffolding, database assumptions, and additional stacks.
 
+## 2024-11-20 — Project Contract Generator v1
+- **Files added:** `engine/projects/contractGenerator.js`
+- **Files modified:** `engine/api/server.ts`, `CHANGELOG.md`
+- **Reasoning:** Added a deterministic, ADE-driven Project Contract layer to describe services/stacks/commands/ports for supported stacks (`node-nextjs`, `node-vite`, `python-fastapi`). Kept it separate from ADE to cleanly layer decision (what to build) from contract (how to run/build services) and to avoid UI coupling.
+- **Impact:** Provides a structured contract over HTTP (`POST /engine/projects/contract`) for downstream scaffolding/adapters/sandbox work; intentionally deferred databases, deployment targets, and any code generation.
+
 ## 2024-11-20 — [Retroactive Entry] Engine HTTP Surface & Contracts
 - **Files added:** `engine/api/server.ts`, `engine/contracts/http.md`
 - **Files modified:** `Change.md`
