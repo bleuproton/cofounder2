@@ -69,6 +69,11 @@
 - **Reasoning:** Documented the IDE folder layout, widget behavior, and mode-based UI gating to reinforce that Studio is a strict client of the engine. Theia is kept for extensibility and feature gating; modes are respected from engine responses, not overridden by UI. Excluded unrestricted terminals and direct file access to maintain CPS/policy safety.
 - **Impact:** Clearer guidance for IDE consumers (web/desktop) without changing engine behavior or policies; future work (full editor wiring, packaging) remains out of scope for this MVP.
 
+## 2025-12-19 — Runtime note: API port conflict guidance
+- **Files modified:** `CHANGELOG.md`
+- **Reasoning:** Documented the fix for `EADDRINUSE` on `::4200` (API already bound): either stop the other process using 4200 or start the API with a different `PORT` (e.g., `PORT=4301 npm run start`). Engine/web app behavior unchanged; policies/CPS remain enforced.
+- **Impact:** Operational guidance only; no code changes. Avoids crashes when multiple instances run concurrently.
+
 ## 2024-11-20 — [Retroactive Entry] Engine HTTP Surface & Contracts
 - **Files added:** `engine/api/server.ts`, `engine/contracts/http.md`
 - **Files modified:** `Change.md`
