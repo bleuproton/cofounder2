@@ -3,6 +3,7 @@ import path from "path";
 import nodeNextAdapter from "./nodeNextAdapter.js";
 import nodeViteAdapter from "./nodeViteAdapter.js";
 import pythonFastapiAdapter from "./pythonFastapiAdapter.js";
+import cps from "../structure/cps.js";
 
 const ADAPTERS = [nodeNextAdapter, nodeViteAdapter, pythonFastapiAdapter];
 
@@ -38,20 +39,29 @@ export function scaffoldContract({ projectId, contract, rootDir }) {
 		process.env.EXPORT_APPS_ROOT ||
 		path.resolve(process.cwd(), "..", "apps");
 
-	const projectRoot = path.resolve(exportRoot, projectId);
-	ensureDir(projectRoot);
+	// Enforce canonical project structure and manifests
+	const { root: projectRoot, servicesRoot } = cps.ensureProjectStructure({
+		projectId,
+		exportRoot,
+		services: contract.services,
+	});
 
 	const paths = [];
 
 	for (const service of contract.services) {
 		const adapter = getAdapter(service.stack);
-		const serviceDir = path.join(projectRoot, service.name || service.role || service.stack);
+		const serviceDir = cps.serviceDir({
+			projectId,
+			exportRoot,
+			serviceName: service.name || service.role || service.stack,
+		});
+		// ensure manifest exists; cps already wrote it in ensureProjectStructure
 		ensureDir(serviceDir);
 		adapter.scaffold(service, serviceDir);
 		paths.push(serviceDir);
 	}
 
-	return { paths, projectRoot };
+	return { paths, projectRoot, servicesRoot };
 }
 
 export default {

@@ -41,6 +41,12 @@
 - **Reasoning:** Introduced deterministic, non-AI adapters to scaffold minimal project structures from Project Contracts for supported stacks (`node-nextjs`, `node-vite`, `python-fastapi`). Adapters are a separate layer to translate contracts into filesystem scaffolds without touching web UI and without AI, keeping repeatability and safety.
 - **Impact:** Enables `POST /engine/adapters/scaffold` to create minimal service directories (essential files only) for downstream agents/sandbox/IDE flows; intentionally deferred business logic, databases, auth, deploy, and Docker.
 
+## 2025-12-18 — Canonical Project Structure (CPS) v1
+- **Files added:** `engine/structure/cps.js`
+- **Files modified:** `engine/adapters/index.js`, `engine/api/server.js`, `engine/api/server.ts`, `CHANGELOG.md`
+- **Reasoning:** Enforced a canonical, versioned project layout (structureVersion 1.0) with `cofounder.json` at project root and `service.json` per service, under `services/`. Adapters now scaffold only inside the allowed CPS paths and fail on violations. AI is intentionally excluded from structure decisions to keep repeatability and tooling safety; frameworks are nested under services to keep UI/backend symmetry and isolation.
+- **Impact:** Safer scaffolding for IDEs/agents/sandbox: deterministic paths, manifests, and validation during scaffold. Enables future automated checks, adapters, and runners without risking UI coupling. Deferred databases, deploy/Docker, and business logic.
+
 ## 2024-11-20 — [Retroactive Entry] Engine HTTP Surface & Contracts
 - **Files added:** `engine/api/server.ts`, `engine/contracts/http.md`
 - **Files modified:** `Change.md`
