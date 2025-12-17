@@ -1,44 +1,103 @@
-# Cofounder (alpha)
+# Cofounder (Alpha)
 
-Cofounder is an experimental generator for full-stack web apps. The `api/` folder orchestrates a DAG of LLM steps (product docs → database → backend → UX → React UI). The `dashboard/` folder provides a web dashboard to start projects, follow the flow, edit files, and download a ZIP of your project state. Generated code is written to an export directory based on the boilerplate skeleton.
+Cofounder is an experimental **full-stack web app generator** powered by LLMs. It orchestrates a deterministic, multi-step generation pipeline that turns a plain-language product idea into a runnable React + backend application.
 
-Early alpha: things change quickly, validations are minimal, and token usage can be high.
+The system is split into a **generator runtime**, a **web dashboard**, and a **headless engine** that can be reused by web, IDE, or mobile clients.
 
-## Repo overview
+> ⚠️ **Early alpha**: Expect breaking changes, limited validation, rough edges, and potentially high token usage.
 
-* api/ – Express + Socket.IO server, runtime for the generator, stores data in db/projects/<id>, serves the dashboard from api/dist.
-* dashboard/ – Vite + React dashboard (Monaco editor, flow/console, export, settings). npm run build writes to ../api/dist.
-* boilerplate/ – Source for the generated app (backend/ Express + PGlite, vitereact/ Vite + React + GenUI plugin) and a root package.json with a dev script that starts both.
-* engine/ – Headless engine (UI-agnostic) invoked over HTTP by web, IDE, and iOS clients.
+---
 
-### Engine contents
+## ✨ What Cofounder Does
 
-* api/server.js – standalone entrypoint (health, projects, ADE, contracts).
-* architecture/decider.js – Architecture Decision Engine (deterministic stack selection).
-* projects/contractGenerator.js – Project Contract Generator (services, commands, ports).
-* contracts/http.md – HTTP contract for clients (no UI types).
+* Transforms product intent into a full-stack application
+* Uses a DAG of LLM steps (PRD → DB → Backend → UX → UI)
+* Generates **real, editable code** (React + Express)
+* Keeps **architecture decisions deterministic and explainable**
+* Supports regeneration and iteration without losing state
 
-## Requirements
+---
 
-* Node 20+ (22 used) and npm.
-* At least an OPENAI_API_KEY (Anthropic optional).
-* Create an export directory (for example mkdir -p apps in the repo root).
-* Optional cloud/state support via Firebase and Google Cloud Storage.
+## 🧱 Repository Structure
 
-## Installation and basic setup
+```
+.
+├── api/            # Generator runtime (Express + Socket.IO)
+├── dashboard/      # Web dashboard (Vite + React)
+├── engine/         # Headless HTTP engine (UI-agnostic)
+├── boilerplate/    # Source skeleton for generated apps
+└── apps/           # (Optional) Export destination for generated projects
+```
 
-1. Install dependencies
+### `api/`
 
+* Express + Socket.IO server
+* Orchestrates the generation DAG
+* Stores project state in `db/projects/<id>`
+* Serves the built dashboard from `api/dist`
+
+### `dashboard/`
+
+* Vite + React
+* Monaco editor, live flow graph, console output
+* Export + settings UI
+* `npm run build` outputs to `../api/dist`
+
+### `engine/`
+
+A **headless, UI-agnostic engine** accessed over HTTP.
+
+* Can be used by web, IDE, or mobile clients
+* Contains no React, Vite, or Next.js types
+
+Key files:
+
+* `api/server.js` – standalone engine server
+* `architecture/decider.js` – Architecture Decision Engine (ADE)
+* `projects/contractGenerator.js` – Project Contract Generator
+* `contracts/http.md` – HTTP-only client contract
+
+### `boilerplate/`
+
+The base app that gets cloned and filled:
+
+* `backend/` – Express + PGlite
+* `vitereact/` – Vite + React + GenUI plugin
+* Root `package.json` with a `dev` script to run both
+
+---
+
+## 🚀 Quick Start
+
+### Requirements
+
+* Node.js **20+** (tested with 22)
+* npm
+* `OPENAI_API_KEY` (Anthropic optional)
+
+Optional:
+
+* Firebase + GCS for cloud state
+
+---
+
+### Installation
+
+```bash
+# Install dependencies
 cd api && npm install
 cd ../dashboard && npm install
+```
 
-2. Environment configuration (api/.env)
+---
 
-cp .env.example .env
+### Environment Setup
 
-Recommended local variables:
+Create `api/.env`:
 
+```env
 PORT=4200
+OPENAI_API_KEY=your_key_here
 EXPORT_APPS_ROOT=../apps
 STATE_LOCAL=true
 AUTOEXPORT_ENABLE=true
@@ -46,171 +105,254 @@ AUTOINSTALL_ENABLE=false
 DESIGNER_ENABLE=false
 LLM_PROVIDER=openai
 EMBEDDING_MODEL=text-embedding-3-small
+```
 
 Optional:
 
-* COFOUNDER_API_KEY + RAG_REMOTE_ENABLE=true for remote RAG.
-* STATE_CLOUD, FIREBASE_SERVICE_KEY_PATH, GOOGLECLOUDSTORAGE_* for cloud state.
+* `COFOUNDER_API_KEY` + `RAG_REMOTE_ENABLE=true` (remote RAG)
+* `STATE_CLOUD=true` + Firebase / GCS credentials
 
-3. Build dashboard
+---
 
+### Build Dashboard
+
+```bash
 cd dashboard
 npm run build
+```
 
-4. Start API
+---
 
+### Start the Generator
+
+```bash
 cd ../api
 npm run start
+```
 
-Server runs at [http://localhost:4200](http://localhost:4200)
+The server runs at:
 
-## Headless engine
+```
+http://localhost:4200
+```
 
-Install once:
+---
 
+## 🧠 Headless Engine
+
+The engine can run independently without the dashboard.
+
+### Install (once)
+
+```bash
 cd engine && npm install
+```
 
-Run:
+### Run
 
+```bash
 node api/server.js
+# or
+ENGINE_PORT=4300 node api/server.js
+```
 
-Health:
+### Health Check
 
-curl [http://localhost:4300/health](http://localhost:4300/health)
+```bash
+curl http://localhost:4300/health
+```
 
-## Engine HTTP endpoints
+---
 
-POST /engine/architecture/decide
-Input: { intent }
-Output: decision { id, frontendStack, backendStack, reasoning, confidence }
+### Engine HTTP Endpoints
 
-POST /engine/projects/contract
-Input: { decision }
-Output: contract { services, commands, ports, relationships }
+| Method | Endpoint                      | Description                     |
+| ------ | ----------------------------- | ------------------------------- |
+| POST   | `/engine/architecture/decide` | Decide frontend + backend stack |
+| POST   | `/engine/projects/contract`   | Generate project contract       |
+| POST   | `/engine/projects`            | Create in-memory project        |
+| GET    | `/health`                     | Health check                    |
 
-POST /engine/projects
-Input: { intent, name }
-Output: { project }
+---
 
-GET /health
+## 🏗 Architecture Philosophy
 
-## Engine design rationale
+* **UI-agnostic**: engine exposes only HTTP contracts
+* **Deterministic decisions**: same intent → same stack
+* **Separation of concerns**:
 
-* UI-agnostic, HTTP-only contracts.
-* Clear separation between architecture decisions and execution.
-* Reusable across web, IDE, and mobile clients.
+  * *What*: architecture & stack choice
+  * *How*: contracts & execution
 
-## Creating projects
+This allows the same engine to power web, IDE, and mobile experiences.
 
-Dashboard:
+---
 
-[http://localhost:4200](http://localhost:4200) → Projects → New Project
+## 📦 Creating a Project
 
-CLI:
+### Dashboard
 
-npm run start -- -p "my-app" -d "description" -a "aesthetics"
+Open:
 
-API:
+```
+http://localhost:4200
+```
 
-POST /api/projects/new
+Go to **Projects → New Project** and provide:
 
-Resume:
+* Project ID
+* Description (required)
+* Optional aesthetics
 
+---
+
+### CLI
+
+```bash
+npm run start -- \
+  -p "my-app" \
+  -d "What the app should do" \
+  -a "Light theme with blue accent"
+```
+
+---
+
+### API
+
+```bash
+curl -X POST http://localhost:4200/api/projects/new \
+  -H "Content-Type: application/json" \
+  -d '{"project":"my-app","description":"App description"}'
+```
+
+---
+
+### Resume a Project
+
+```bash
 POST /api/project/resume
+```
 
-## Project output
+---
 
-Project state:
+## 📂 Output Structure
 
+### Project State
+
+```
 api/db/projects/<id>/state/**/*.yaml
+```
 
-Generated app (AUTOEXPORT_ENABLE=true):
+Contains:
 
-EXPORT_APPS_ROOT/<id>/
+* Product docs
+* DB schemas
+* Backend specs
+* UI versions
 
-* backend/ (Express + PGlite)
-* vitereact/ (Vite + React + GenUI)
-* root package.json
+---
 
-## Running generated app
+### Generated App
 
-cd EXPORT_APPS_ROOT/<id>
+If `AUTOEXPORT_ENABLE=true`:
+
+```
+apps/<id>/
+├── backend/
+├── vitereact/
+└── package.json
+```
+
+---
+
+## ▶️ Running the Generated App
+
+```bash
+cd apps/<id>
 npm install
 npm run dev
+```
 
-Frontend: [http://localhost:5173](http://localhost:5173)
-Backend: [http://localhost:1337](http://localhost:1337)
+* Frontend: [http://localhost:5173](http://localhost:5173)
+* Backend: [http://localhost:1337](http://localhost:1337)
 
-## Iteration via GenUI
+---
 
-Cmd or Ctrl + K palette for:
+## 🔁 Iterating via GenUI
 
-* switching view versions
-* regenerating with feedback
-* saving preferences
+Inside the generated app:
 
-## Dashboard tabs
+* Press **Cmd/Ctrl + K**
+* Switch UI versions
+* Regenerate with feedback
+* Persist preferences back to Cofounder
 
-* Blueprint: flow graph with live updates
-* Console: streaming logs
-* Editor: Monaco editor for state files
-* Export: ZIP download
-* Settings: API keys and UI options
-* Live: iframe preview
+---
 
-## Deployment
+## 🖥 Dashboard Tabs
 
-Frontend:
+* **Blueprint** – Live DAG visualization
+* **Console** – Streaming LLM output
+* **Editor** – Monaco editor for state files
+* **Export** – ZIP download of project state
+* **Settings** – API keys and UI simulation
+* **Live** – iframe preview of running app
 
-npm run build → deploy dist/
+---
 
-Backend:
+## 🚢 Deployment
 
+### Frontend
+
+```bash
+cd apps/<id>/vitereact
+npm run build
+```
+
+Deploy `dist/` to Netlify, Vercel, or nginx.
+
+---
+
+### Backend
+
+```bash
+cd apps/<id>/backend
 node initdb.js
 node server.js
+```
 
-Standalone hosting supported.
+Use your preferred process manager for production.
 
-## Important environment variables
+---
 
-OPENAI_API_KEY
-ANTHROPIC_API_KEY
-LLM_PROVIDER
-PORT
-EXPORT_APPS_ROOT
-STATE_LOCAL
-STATE_CLOUD
-AUTOEXPORT_ENABLE
-AUTOINSTALL_ENABLE
-DESIGNER_ENABLE
-COFOUNDER_API_KEY
-RAG_REMOTE_ENABLE
-JWT_SECRET
+## 🔐 Key Environment Variables
 
-## Architecture overview
+* `OPENAI_API_KEY`
+* `ANTHROPIC_API_KEY`
+* `LLM_PROVIDER`
+* `PORT`
+* `EXPORT_APPS_ROOT`
+* `STATE_LOCAL` / `STATE_CLOUD`
+* `AUTOEXPORT_ENABLE`
+* `AUTOINSTALL_ENABLE`
+* `DESIGNER_ENABLE`
+* `COFOUNDER_API_KEY`
+* `RAG_REMOTE_ENABLE`
+* `JWT_SECRET`
 
-* DAG defined in api/system/structure/sequences/projectInit.yaml
-* Nodes in api/system/structure/nodes
-* Functions in api/system/functions
-* State stored as YAML and streamed via Socket.IO
+---
 
-## Useful API routes
+## ⚠️ Known Limitations
 
-GET /ping
-POST /projects/new
-POST /project/resume
-GET /projects/list
-GET /editor/files
-GET /editor/file
-POST /editor/file
-GET /projects/export/:project
-POST /settings/api
-POST /project/actions
+* Alpha-quality software
+* Limited error handling
+* High token usage possible
+* Editor cannot yet create or delete files
+* Export API returns state only (not app code)
+* Backend boilerplate uses `nodemon` by default
 
-## Known limitations
+---
 
-* Alpha quality
-* High token usage
-* Editor cannot create or delete files
-* Export API only returns state
-* nodemon used in backend boilerplate
+## 📄 License
+
+TBD
