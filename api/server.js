@@ -14,6 +14,7 @@ import open, { openApp, apps } from "open";
 import cofounder from "./build.js";
 import archiver from "archiver";
 import { loadApiSettings, persistApiSettings } from "@/utils/apiSettings.js";
+import engineClient from "@/utils/engineClient.js";
 dotenv.config();
 
 // -------------------------------------------------------------- HELPERS  ------------------------
@@ -63,6 +64,25 @@ async function create_new_project() {
 			`\n\t> cd ${process.env.EXPORT_APPS_ROOT}/${new_project.project}` +
 			`\n\t> npm i && npm run dev\x1b[0m`,
 	);
+
+	// Try engine-backed creation (non-blocking, fallback to legacy always)
+	if (new_project.description?.length) {
+		engineClient
+			.createProject({
+				intent: new_project.description,
+				name: new_project.project,
+			})
+			.then((resp) => {
+				console.log(
+					`\x1b[35m> engine createProject OK (id: ${resp?.project?.id || "n/a"}) via ${engineClient.baseUrl}\x1b[0m`,
+				);
+			})
+			.catch((err) => {
+				console.warn(
+					`\x1b[33m> engine createProject failed, fallback to legacy path: ${err.message}\x1b[0m`,
+				);
+			});
+	}
 
 	const query = {
 		pm: {
@@ -388,6 +408,25 @@ app.post("/api/projects/new", async (req, res) => {
 			},
 		},
 	};
+
+	// Try engine-backed creation (best-effort, legacy path remains authoritative)
+	if (new_project_query.description?.length) {
+		engineClient
+			.createProject({
+				intent: new_project_query.description,
+				name: new_project_query.project,
+			})
+			.then((resp) => {
+				console.log(
+					`\x1b[35m> engine createProject OK (id: ${resp?.project?.id || "n/a"}) via ${engineClient.baseUrl}\x1b[0m`,
+				);
+			})
+			.catch((err) => {
+				console.warn(
+					`\x1b[33m> engine createProject failed, using legacy generator only: ${err.message}\x1b[0m`,
+				);
+			});
+	}
 
 	// call async
 	cofounder.system.run({
