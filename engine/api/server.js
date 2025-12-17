@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { decideArchitecture } from "../architecture/decider.js";
 import { generateProjectContract } from "../projects/contractGenerator.js";
+import adapters from "../adapters/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,6 +99,22 @@ app.post("/engine/projects/contract", (req, res) => {
 		res.status(400).json({
 			error: error?.message || "failed to generate project contract",
 		});
+	}
+});
+
+app.post("/engine/adapters/scaffold", (req, res) => {
+	try {
+		const { projectId, contract } = req.body || {};
+		if (!projectId) {
+			return res.status(400).json({ error: "projectId is required" });
+		}
+		if (!contract) {
+			return res.status(400).json({ error: "contract is required" });
+		}
+		const { paths, projectRoot } = adapters.scaffoldContract({ projectId, contract });
+		res.status(200).json({ projectId, paths, root: projectRoot, status: "scaffolded" });
+	} catch (error) {
+		res.status(400).json({ error: error?.message || "failed to scaffold" });
 	}
 });
 

@@ -35,6 +35,12 @@
 - **Reasoning:** Documented how to operate the headless engine (start/stop, endpoints, purpose, layering rationale) to keep UI coupling out and make it consumable by web/IDE/iOS clients.
 - **Impact:** Clarifies run instructions and intent; no runtime changes.
 
+## 2025-12-17 — Adapter System v1
+- **Files added:** `engine/adapters/index.js`, `engine/adapters/nodeNextAdapter.js`, `engine/adapters/nodeViteAdapter.js`, `engine/adapters/pythonFastapiAdapter.js`
+- **Files modified:** `engine/api/server.js`, `engine/api/server.ts`, `CHANGELOG.md`
+- **Reasoning:** Introduced deterministic, non-AI adapters to scaffold minimal project structures from Project Contracts for supported stacks (`node-nextjs`, `node-vite`, `python-fastapi`). Adapters are a separate layer to translate contracts into filesystem scaffolds without touching web UI and without AI, keeping repeatability and safety.
+- **Impact:** Enables `POST /engine/adapters/scaffold` to create minimal service directories (essential files only) for downstream agents/sandbox/IDE flows; intentionally deferred business logic, databases, auth, deploy, and Docker.
+
 ## 2024-11-20 — [Retroactive Entry] Engine HTTP Surface & Contracts
 - **Files added:** `engine/api/server.ts`, `engine/contracts/http.md`
 - **Files modified:** `Change.md`
