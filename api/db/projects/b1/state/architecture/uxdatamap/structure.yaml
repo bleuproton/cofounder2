@@ -74,4 +74,3 @@ data:
     - description: Allow users to share the app with others
       path: /share
       view: UV_ShareApp
-m
