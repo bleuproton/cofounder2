@@ -15,6 +15,7 @@ import cofounder from "./build.js";
 import archiver from "archiver";
 import { loadApiSettings, persistApiSettings } from "@/utils/apiSettings.js";
 import engineClient from "@/utils/engineClient.js";
+import { spawn } from "child_process";
 dotenv.config();
 
 // -------------------------------------------------------------- HELPERS  ------------------------
@@ -162,6 +163,38 @@ const server = app.listen(PORT, () => {
 	open(`http://localhost:${PORT}/`);
 });
 
+const EXPORT_APPS_ROOT =
+	process.env.EXPORT_APPS_ROOT ||
+	path.resolve(__dirname, "..", "apps");
+const appProcesses = new Map(); // project -> child process
+
+function resolveAppPath(project) {
+	const candidates = [
+		path.join(EXPORT_APPS_ROOT, project, "vitereact"),
+		path.join(EXPORT_APPS_ROOT, project),
+	];
+	for (const candidate of candidates) {
+		if (fs.existsSync(path.join(candidate, "package.json"))) {
+			return candidate;
+		}
+	}
+	return null;
+}
+
+function stopAppProcess(project) {
+	const existing = appProcesses.get(project);
+	if (existing && !existing.killed) {
+		existing.kill("SIGINT");
+	}
+	appProcesses.delete(project);
+}
+
+process.on("exit", () => {
+	for (const project of appProcesses.keys()) {
+		stopAppProcess(project);
+	}
+});
+
 // -------------------------------------------------------- SERVER REST API PATHS ------------------------
 
 app.get("/api/ping", (req, res) => {
@@ -237,6 +270,56 @@ app.get("/api/projects/list", (req, res) => {
 			});
 		res.status(200).json({ projects });
 	});
+});
+
+app.post("/api/projects/:project/start-app", async (req, res) => {
+	try {
+		const { project } = req.params || {};
+		const port = req.body?.port || 5173;
+		if (!project) {
+			return res.status(400).json({ error: "project is required" });
+		}
+		const appPath = resolveAppPath(project);
+		if (!appPath) {
+			return res.status(404).json({
+				error: `app not found under ${EXPORT_APPS_ROOT}/${project}`,
+			});
+		}
+		const existing = appProcesses.get(project);
+		if (existing && !existing.killed) {
+			return res.status(200).json({
+				status: "running",
+				pid: existing.pid,
+				port,
+				message: "app already running",
+			});
+		}
+		const child = spawn("npm", ["run", "dev", "--", "--host", "--port", `${port}`], {
+			cwd: appPath,
+			env: {
+				...process.env,
+				PORT: port,
+			},
+			stdio: "ignore",
+			detached: true,
+		});
+		appProcesses.set(project, child);
+		child.unref();
+		child.on("exit", () => {
+			appProcesses.delete(project);
+		});
+		return res.status(200).json({
+			status: "starting",
+			pid: child.pid,
+			port,
+			appPath,
+		});
+	} catch (error) {
+		console.error("Failed to start app", error);
+		res.status(500).json({
+			error: error?.message || "failed to start app",
+		});
+	}
 });
 
 // ----------------------------------- Editor helpers -----------------------------------

@@ -24,6 +24,9 @@ const Project: React.FC = () => {
 	const [pingServer, setPingServer] = useState(false);
 	const [pingApp, setPingApp] = useState(false);
 	const [pingServerChecked, setPingServerChecked] = useState(false);
+	const [startingApp, setStartingApp] = useState(false);
+	const [startError, setStartError] = useState("");
+	const [startMessage, setStartMessage] = useState("");
 
 	const [initialLoad, setInitialLoad] = useState(false);
 
@@ -40,6 +43,22 @@ const Project: React.FC = () => {
 			dispatch(resetProject());
 		}
 	}, []);
+
+	const checkPingApp = useCallback(async () => {
+		try {
+			const response = await fetch(WEBAPP_LOCAL_URL);
+			if (response.ok) {
+				setPingApp(true);
+				return true;
+			} else {
+				setPingApp(false);
+				return false;
+			}
+		} catch (error) {
+			setPingApp(false);
+			return false;
+		}
+	}, [WEBAPP_LOCAL_URL]);
 
 	useEffect(() => {
 		if (tab === "blueprint") {
@@ -60,21 +79,40 @@ const Project: React.FC = () => {
 			checkPingServer();
 		}
 		if (tab === "live") {
-			const checkPingApp = async () => {
-				try {
-					const response = await fetch(WEBAPP_LOCAL_URL);
-					if (response.ok) {
-						setPingApp(true);
-					} else {
-						setPingApp(false);
-					}
-				} catch (error) {
-					setPingApp(false);
-				}
-			};
 			checkPingApp();
 		}
-	}, [tab]);
+	}, [tab, checkPingApp]);
+
+	const startApp = useCallback(async () => {
+		if (!project) return;
+		setStartingApp(true);
+		setStartError("");
+		setStartMessage("");
+		try {
+			const response = await fetch(`${SERVER_LOCAL_URL}/projects/${project}/start-app`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ port: 5173 }),
+			});
+			const data = await response.json();
+			if (!response.ok) {
+				throw new Error(data?.error || "failed to start app");
+			}
+			setStartMessage(data?.message || data?.status || "starting app");
+			// Poll for availability
+			for (let i = 0; i < 20; i++) {
+				await new Promise((r) => setTimeout(r, 500));
+				const ok = await checkPingApp();
+				if (ok) break;
+			}
+		} catch (error) {
+			setStartError(error?.message || "failed to start app");
+		} finally {
+			setStartingApp(false);
+		}
+	}, [SERVER_LOCAL_URL, checkPingApp, project]);
 
 	if (!pingServerChecked) return <></>;
 	return (
@@ -214,16 +252,34 @@ const Project: React.FC = () => {
 								)) || (
 									<>
 										<div className="flex items-center justify-center h-screen w-full text-white">
-											<h1 className="text-2xl font-light opacity-50 whitespace-pre-wrap break-all">
-												{`{ app at \`${WEBAPP_LOCAL_URL}\` not reachable }`}
-												<br />
-												<br />
-												<br />
-												{`either >\twebapp vite server not launched\n\t\t\t\t( use \`npm run dev\` in apps/${project}/ to start )`}
-												<br />
-												<br />
-												{`or > problem in app root/store/view`}
-											</h1>
+											<div className="bg-black/60 border border-[#222] rounded-lg p-6 space-y-4 max-w-xl text-center">
+												<h1 className="text-xl font-semibold text-white">
+													{`App at \`${WEBAPP_LOCAL_URL}\` not reachable`}
+												</h1>
+												<p className="text-sm text-[#b8b8c2] whitespace-pre-wrap">
+													Launch the exported app dev server for this project directly from the UI.
+												</p>
+												<div className="flex flex-col gap-2">
+													<Button
+														disabled={startingApp}
+														onClick={startApp}
+														className="mx-auto w-full sm:w-auto"
+													>
+														{startingApp ? "Starting..." : "Start local dev server"}
+													</Button>
+													{startMessage && (
+														<p className="text-emerald-300 text-xs">{startMessage}</p>
+													)}
+													{startError && (
+														<p className="text-red-300 text-xs whitespace-pre-wrap">
+															{startError}
+														</p>
+													)}
+												</div>
+												<p className="text-xs text-[#80808f] whitespace-pre-wrap">
+													{`Either the Vite server is not running (apps/${project}) or there is an issue in app root/store/view.`}
+												</p>
+											</div>
 										</div>
 									</>
 								)}
