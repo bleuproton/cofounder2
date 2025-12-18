@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 
@@ -43,7 +43,13 @@ const Project: React.FC = () => {
 	const tabs = ["blueprint", "live", "editor", "export"];
 
 	const SERVER_LOCAL_URL = "http://localhost:4200/api";
-	const WEBAPP_LOCAL_URL = "http://localhost:5173";
+	const defaultPort = 5173;
+	const WEBAPP_LOCAL_URL = useMemo(() => {
+		if (liveStatus?.port) {
+			return `http://localhost:${liveStatus.port}`;
+		}
+		return `http://localhost:${defaultPort}`;
+	}, [liveStatus]);
 
 	const dispatch = useDispatch();
 
@@ -108,6 +114,11 @@ const Project: React.FC = () => {
 			}
 			if (data?.status === "error") {
 				setStartError(data?.error || "deploy error");
+			}
+			if (data?.status === "starting" || data?.status === "building") {
+				setStartingApp(true);
+			} else {
+				setStartingApp(false);
 			}
 		} catch (e) {
 			// ignore poll errors
@@ -312,10 +323,10 @@ const Project: React.FC = () => {
 										<div className="flex items-center justify-center h-screen w-full text-white">
 											<div className="bg-black/60 border border-[#222] rounded-lg p-6 space-y-4 max-w-xl text-center">
 												<h1 className="text-xl font-semibold text-white">
-													{`App at \`${WEBAPP_LOCAL_URL}\` not reachable`}
+													{`Live preview at \`${WEBAPP_LOCAL_URL}\` not reachable yet`}
 												</h1>
 												<p className="text-sm text-[#b8b8c2] whitespace-pre-wrap">
-													Launch the exported app dev server for this project directly from the UI.
+													Build & start the exported app directly from the UI. Deps install automatically if missing.
 												</p>
 												<div className="flex flex-col gap-2">
 													{liveStatus?.status && (
