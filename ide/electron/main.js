@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const { app, BrowserWindow, dialog } = require("electron");
 const { spawn } = require("child_process");
 const http = require("http");
@@ -23,7 +24,26 @@ const engineDir = isPackaged
 
 const theiaDir = isPackaged
 	? path.join(process.resourcesPath, "theia-app")
-	: path.resolve(__dirname, "packages", "app");
+	: path.resolve(__dirname, "..", "packages", "app");
+
+const logDir = path.join(app.getPath("userData"), "logs");
+const logFile = path.join(logDir, "crash.log");
+
+function logCrash(message, err) {
+	try {
+		fs.mkdirSync(logDir, { recursive: true });
+		const ts = new Date().toISOString();
+		const payload = [
+			`[${ts}] ${message}`,
+			err ? String(err.stack || err.message || err) : "",
+			"",
+		].join("\n");
+		fs.appendFileSync(logFile, payload, "utf8");
+	} catch (e) {
+		// last resort: stderr
+		console.error("Failed to write crash log:", e);
+	}
+}
 
 function waitForUrl(url, attempts = 40, delayMs = 250) {
 	return new Promise((resolve, reject) => {
@@ -47,7 +67,54 @@ function waitForUrl(url, attempts = 40, delayMs = 250) {
 }
 
 function spawnNodeProcess(label, entry, args = [], options = {}) {
-	const child = spawn(process.execPath, [entry, ...args], {
+	// In the Electron main process, process.execPath points to the Electron binary.
+	// For backend Node scripts (engine, Theia), prefer the system Node to avoid ENOENT.
+	const resolveNodeBinary = () => {
+		// Find a real node executable: prefer PATH lookup, then common system installs, then NVM, then fallback.
+		const pathLookup = () => {
+			const entries = (process.env.PATH || "").split(path.delimiter).filter(Boolean);
+			for (const p of entries) {
+				const candidate = path.join(p, "node");
+				if (fs.existsSync(candidate)) return candidate;
+			}
+			return null;
+		};
+
+		const fromPath = pathLookup();
+		if (fromPath) return fromPath;
+
+		const candidates = [
+			process.env.NODE_BINARY,
+			"/opt/homebrew/bin/node",
+			"/usr/local/bin/node",
+			"/usr/bin/node",
+			process.env.NODE,
+			process.env.NVM_BIN && path.join(process.env.NVM_BIN, "node"),
+			process.env.HOME &&
+				path.join(
+					process.env.HOME,
+					".nvm/versions/node",
+					process.version,
+					"bin/node",
+				),
+		].filter(Boolean);
+		for (const bin of candidates) {
+			try {
+				if (fs.existsSync(bin)) return bin;
+			} catch (e) {
+				// ignore
+			}
+		}
+		// Fallback to process.execPath, which will be Electron when packaged
+		return process.execPath;
+	};
+
+	const nodeCmd =
+		options.useSystemNode || !app.isPackaged
+			? resolveNodeBinary()
+			: process.execPath;
+
+	const child = spawn(nodeCmd, [entry, ...args], {
 		stdio: "inherit",
 		...options,
 	});
@@ -56,6 +123,7 @@ function spawnNodeProcess(label, entry, args = [], options = {}) {
 	});
 	child.on("error", (err) => {
 		console.error(`[${label}] failed to start`, err);
+		logCrash(`${label} failed to start`, err);
 	});
 	return child;
 }
@@ -77,6 +145,7 @@ async function ensureEngine() {
 			...process.env,
 			ENGINE_PORT,
 		},
+		useSystemNode: true,
 	});
 
 	try {
@@ -99,7 +168,9 @@ async function startTheiaBackend() {
 		console.log("[theia] no existing instance detected, starting bundled backend");
 	}
 
-	const entry = path.join(theiaDir, "src-gen", "backend", "main.js");
+	const libEntry = path.join(theiaDir, "lib", "backend", "main.js");
+	const srcGenEntry = path.join(theiaDir, "src-gen", "backend", "main.js");
+	const entry = fs.existsSync(libEntry) ? libEntry : srcGenEntry;
 	ideProcess = spawnNodeProcess("theia-backend", entry, ["--port", `${THEIA_PORT}`], {
 		cwd: theiaDir,
 		env: {
@@ -108,6 +179,7 @@ async function startTheiaBackend() {
 			HOSTNAME: THEIA_HOST,
 			PORT: THEIA_PORT,
 		},
+		useSystemNode: true,
 	});
 
 	try {
@@ -186,4 +258,20 @@ app.on("before-quit", () => {
 
 process.on("exit", () => {
 	stopChildProcesses();
+});
+
+process.on("uncaughtException", (err) => {
+	logCrash("uncaughtException", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+	logCrash("unhandledRejection", reason);
+});
+
+app.on("render-process-gone", (_event, webContents, details) => {
+	logCrash("render-process-gone", details);
+});
+
+app.on("child-process-gone", (_event, details) => {
+	logCrash("child-process-gone", details);
 });
