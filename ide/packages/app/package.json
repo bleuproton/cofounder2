@@ -1,0 +1,25 @@
+{
+  "name": "cofounder-theia-app",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "@theia/core": "^1.43.0",
+    "@theia/monaco": "^1.43.0",
+    "@theia/filesystem": "^1.43.0",
+    "@theia/workspace": "^1.43.0",
+    "@theia/navigator": "^1.43.0",
+    "@theia/preferences": "^1.43.0",
+    "@theia/terminal": "^1.43.0",
+    "@theia/debug": "^1.43.0",
+    "@theia/git": "^1.43.0",
+    "cofounder-extension": "file:../cofounder-extension"
+  },
+  "devDependencies": {
+    "@theia/cli": "^1.43.0"
+  },
+  "scripts": {
+    "start": "theia start --mode development --port 3030",
+    "build": "theia build --mode production",
+    "prepare": "theia build --mode development"
+  }
+}
