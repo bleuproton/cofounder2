@@ -37,8 +37,10 @@ This repo contains the structure and extension skeleton; install Theia deps befo
 ```sh
 cd ide
 npm install
-npm run build
-# then configure Theia electron packaging per @theia/cli docs
+npm run build            # builds Theia app
+npm run dist:mac         # builds Cofounder Studio.app and Cofounder Studio.dmg (macOS)
+# dist output: ide/dist/ (includes .app and .dmg)
+# Engine auto-starts on launch if not already running (localhost)
 ```
 
 ## Safety

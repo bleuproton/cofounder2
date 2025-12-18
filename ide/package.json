@@ -4,17 +4,64 @@
   "version": "0.0.1",
   "description": "Cofounder Studio (Theia-based) - thin client for the headless engine",
   "license": "Apache-2.0",
+  "main": "electron/main.js",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
     "prepare": "npm run build",
-    "build": "npm run build:browser && npm run build:electron",
-    "build:browser": "echo \"Theia browser build placeholder\"",
-    "build:electron": "echo \"Theia electron build placeholder\"",
-    "start": "echo \"Run Theia electron app once dependencies are installed\""
+    "build": "npm run build:theia",
+    "build:theia": "theia build --mode production",
+    "start": "NODE_OPTIONS=--max_old_space_size=4096 electron electron/main.js",
+    "dist:mac": "npm run build:theia && npm run deps:engine && electron-builder --mac",
+    "dist:dir": "npm run build:theia && npm run deps:engine && electron-builder --dir",
+    "deps:engine": "npm install --prefix ../engine --omit=dev"
   },
   "devDependencies": {
-    "@theia/cli": "^1.43.0"
+    "@theia/cli": "^1.43.0",
+    "electron": "^29.4.6",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.cofounder.studio",
+    "productName": "Cofounder Studio",
+    "asar": false,
+    "files": [
+      "electron/**",
+      "packages/**",
+      "node_modules/**",
+      "package.json",
+      "package-lock.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../engine",
+        "to": "engine"
+      },
+      {
+        "from": "packages/app",
+        "to": "theia-app"
+      }
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "artifactName": "Cofounder Studio-${version}-${arch}.${ext}"
+    },
+    "protocols": [
+      {
+        "name": "Cofounder Studio",
+        "schemes": [
+          "cofounder-studio"
+        ]
+      }
+    ]
   }
 }

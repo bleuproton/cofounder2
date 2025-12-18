@@ -1,5 +1,11 @@
 # Changelog
 
+## 2025-12-18 — Cofounder Studio desktop packaging (macOS)
+- Added macOS Electron packaging for Cofounder Studio with app metadata (app name, bundle id) and a placeholder icon so macOS is the first desktop target.
+- Bundled the headless engine and Theia app into the macOS build; added scripts for `.app` and `.dmg` outputs using Electron Builder.
+- Introduced an Electron main process that auto-starts the local engine as a child process, reuses an already-running engine, health-checks before opening the UI, and shuts down the child engine/backend on app exit.
+- Deferred: code signing/notarization, auto-updates, Docker/multi-user support, and any changes to engine policies or security rules (IDE stays a thin client over localhost).
+
 ## 2024-11-20 — [Retroactive Entry] Headless Engine Bootstrap
 - **Files added:** `engine/README.md`, `engine/.env.example`, `engine/package.json`, `engine/server.js`
 - **Files modified:** `Change.md`
