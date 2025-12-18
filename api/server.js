@@ -191,7 +191,7 @@ function resolveAppPath(project) {
 	return null;
 }
 
-function stopAppProcess(project) {
+function stopAppProcess(project, { clearLogs = true } = {}) {
 	const existing = appProcesses.get(project);
 	if (existing && !existing.killed) {
 		existing.kill("SIGINT");
@@ -202,8 +202,10 @@ function stopAppProcess(project) {
 		backend.kill("SIGINT");
 	}
 	backendProcesses.delete(project);
-	liveStatus.delete(project);
-	liveLogs.delete(project);
+	if (clearLogs) {
+		liveStatus.delete(project);
+		liveLogs.delete(project);
+	}
 }
 
 process.on("exit", () => {
@@ -468,6 +470,26 @@ app.post("/api/projects/:project/live/stop", (req, res) => {
 	stopAppProcess(project);
 	appendLog(project, "Stopped live preview/backend");
 	res.status(200).json({ status: "stopped" });
+});
+
+app.post("/api/projects/:project/live/pause", (req, res) => {
+	const { project } = req.params || {};
+	if (!project) {
+		return res.status(400).json({ error: "project is required" });
+	}
+	stopAppProcess(project, { clearLogs: false });
+	const prev = liveStatus.get(project) || {};
+	liveStatus.set(project, {
+		...prev,
+		status: "paused",
+		pid: null,
+		backendPid: null,
+	});
+	appendLog(project, "Paused live preview/backend");
+	return res.status(200).json({
+		status: "paused",
+		logs: liveLogs.get(project) || [],
+	});
 });
 
 app.get("/api/projects/:project/live/status", (req, res) => {

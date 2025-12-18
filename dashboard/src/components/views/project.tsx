@@ -183,6 +183,25 @@ const Project: React.FC = () => {
 		}
 	}, [SERVER_LOCAL_URL, project]);
 
+	const pauseApp = useCallback(async () => {
+		if (!project) return;
+		try {
+			const res = await fetch(`${SERVER_LOCAL_URL}/projects/${project}/live/pause`, {
+				method: "POST",
+			});
+			const data = await res.json();
+			setLiveStatus((prev) => ({ ...prev, status: "paused" }));
+			if (Array.isArray(data?.logs)) {
+				setStartLogs(data.logs);
+			} else {
+				setStartLogs((prev) => [...prev, "Paused live preview."]);
+			}
+			setPingApp(false);
+		} catch (e) {
+			// ignore
+		}
+	}, [SERVER_LOCAL_URL, project]);
+
 	if (!pingServerChecked) return <></>;
 	return (
 		<>
@@ -342,6 +361,13 @@ const Project: React.FC = () => {
 															className="mx-auto w-full sm:w-auto"
 														>
 															{startingApp ? "Starting..." : "Build & Start live"}
+														</Button>
+														<Button
+															variant="outline"
+															onClick={pauseApp}
+															className="mx-auto w-full sm:w-auto"
+														>
+															Pause live
 														</Button>
 														<Button
 															variant="secondary"
