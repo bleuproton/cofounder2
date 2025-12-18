@@ -28,6 +28,7 @@ const ComponentDesigner: React.FC<ComponentDesignerProps> = ({
 	const [selectedProject, setSelectedProject] = useState<string>(projectId || "");
 	const [status, setStatus] = useState<string>("Idle");
 	const [embedKey, setEmbedKey] = useState<number>(0);
+	const [embedReachable, setEmbedReachable] = useState<boolean | null>(null);
 	const theiaBaseUrl = useMemo(
 		() => import.meta.env.VITE_THEIA_URL || "http://localhost:3030",
 		[],
@@ -67,6 +68,27 @@ const ComponentDesigner: React.FC<ComponentDesignerProps> = ({
 			return "";
 		}
 	}, [theiaBaseUrl, selectedProject]);
+
+	useEffect(() => {
+		let cancelled = false;
+		const ping = async () => {
+			if (!embedUrl) {
+				setEmbedReachable(null);
+				return;
+			}
+			try {
+				const res = await fetch(embedUrl, { method: "HEAD", mode: "no-cors" });
+				if (!cancelled) setEmbedReachable(true);
+				return res;
+			} catch (e) {
+				if (!cancelled) setEmbedReachable(false);
+			}
+		};
+		ping();
+		return () => {
+			cancelled = true;
+		};
+	}, [embedUrl, embedKey]);
 
 	return (
 		<div className="min-h-screen w-full bg-[#0b0b0f] text-white">
@@ -168,7 +190,13 @@ const ComponentDesigner: React.FC<ComponentDesignerProps> = ({
 							{selectedProject || "No project selected"}
 						</Badge>
 						<div className="text-xs text-[#b8b8c2] flex gap-3 items-center">
-							<span>{embedUrl ? "Embedded Theia is ready" : "Set VITE_THEIA_URL"}</span>
+							<span>
+								{embedUrl
+									? embedReachable
+										? "Embedded Theia reachable"
+										: "Theia unreachable (start the service or update VITE_THEIA_URL)"
+									: "Set VITE_THEIA_URL"}
+							</span>
 							<Button
 								variant="secondary"
 								className="text-xs px-3 py-1"
@@ -184,7 +212,7 @@ const ComponentDesigner: React.FC<ComponentDesignerProps> = ({
 						</div>
 					</div>
 					<div className="rounded-lg border border-[#1f1f2a] overflow-hidden bg-black/50">
-						{embedUrl ? (
+						{embedUrl && embedReachable !== false ? (
 							<iframe
 								key={embedKey}
 								src={embedUrl}
@@ -193,7 +221,9 @@ const ComponentDesigner: React.FC<ComponentDesignerProps> = ({
 							/>
 						) : (
 							<div className="p-6 text-center text-[#8d8da0]">
-								Set VITE_THEIA_URL in your dashboard env to load Theia (default http://localhost:3030).
+								{embedUrl
+									? "Theia is not reachable. Start the Theia service at VITE_THEIA_URL (default http://localhost:3030) or update the URL, then Reload."
+									: "Set VITE_THEIA_URL in your dashboard env to load Theia (default http://localhost:3030)."}
 							</div>
 						)}
 					</div>
