@@ -294,6 +294,26 @@ app.post("/api/projects/:project/start-app", async (req, res) => {
 				message: "app already running",
 			});
 		}
+
+		// Ensure dependencies are installed (minimal guard, best-effort)
+		const nodeModulesPath = path.join(appPath, "node_modules");
+		if (!fs.existsSync(nodeModulesPath)) {
+			await new Promise((resolveInstall, rejectInstall) => {
+				const install = spawn("npm", ["install"], {
+					cwd: appPath,
+					env: process.env,
+					stdio: "inherit",
+				});
+				install.on("exit", (code) => {
+					if (code === 0) return resolveInstall(true);
+					return rejectInstall(
+						new Error(`npm install failed with code ${code}`),
+					);
+				});
+				install.on("error", rejectInstall);
+			});
+		}
+
 		const child = spawn("npm", ["run", "dev", "--", "--host", "--port", `${port}`], {
 			cwd: appPath,
 			env: {

@@ -27,6 +27,7 @@ const Project: React.FC = () => {
 	const [startingApp, setStartingApp] = useState(false);
 	const [startError, setStartError] = useState("");
 	const [startMessage, setStartMessage] = useState("");
+	const [startLogs, setStartLogs] = useState<string[]>([]);
 
 	const [initialLoad, setInitialLoad] = useState(false);
 
@@ -88,6 +89,7 @@ const Project: React.FC = () => {
 		setStartingApp(true);
 		setStartError("");
 		setStartMessage("");
+		setStartLogs((prev) => [...prev, "Starting local dev server..."]);
 		try {
 			const response = await fetch(`${SERVER_LOCAL_URL}/projects/${project}/start-app`, {
 				method: "POST",
@@ -101,14 +103,24 @@ const Project: React.FC = () => {
 				throw new Error(data?.error || "failed to start app");
 			}
 			setStartMessage(data?.message || data?.status || "starting app");
+			setStartLogs((prev) => [
+				...prev,
+				`App path: ${data?.appPath || "n/a"}`,
+				`PID: ${data?.pid || "n/a"}`,
+				"Waiting for server to become reachable...",
+			]);
 			// Poll for availability
 			for (let i = 0; i < 20; i++) {
 				await new Promise((r) => setTimeout(r, 500));
 				const ok = await checkPingApp();
 				if (ok) break;
 			}
+			if (pingApp) {
+				setStartLogs((prev) => [...prev, "App is reachable."]);
+			}
 		} catch (error) {
 			setStartError(error?.message || "failed to start app");
+			setStartLogs((prev) => [...prev, `Error: ${error?.message || "unknown error"}`]);
 		} finally {
 			setStartingApp(false);
 		}
@@ -275,9 +287,18 @@ const Project: React.FC = () => {
 															{startError}
 														</p>
 													)}
+													{startLogs.length > 0 && (
+														<div className="text-left text-xs bg-[#0f0f13] border border-[#1f1f2a] rounded p-3 space-y-1 max-h-40 overflow-y-auto">
+															{startLogs.map((log, idx) => (
+																<p key={idx} className="text-[#c5c5d6]">
+																	{log}
+																</p>
+															))}
+														</div>
+													)}
 												</div>
 												<p className="text-xs text-[#80808f] whitespace-pre-wrap">
-													{`Either the Vite server is not running (apps/${project}) or there is an issue in app root/store/view.`}
+													{`Either the Vite server is not running (apps/${project}) or there is an issue in app root/store/view. Dependencies are installed automatically if missing.`}
 												</p>
 											</div>
 										</div>
