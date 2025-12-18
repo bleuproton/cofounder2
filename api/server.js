@@ -167,6 +167,16 @@ const EXPORT_APPS_ROOT =
 	process.env.EXPORT_APPS_ROOT ||
 	path.resolve(__dirname, "..", "apps");
 const appProcesses = new Map(); // project -> child process
+const backendProcesses = new Map(); // project -> backend child
+const liveLogs = new Map(); // project -> array<string>
+const liveStatus = new Map(); // project -> { status, port, appPath, pid, backendPid, error }
+
+function appendLog(project, message) {
+	const lines = liveLogs.get(project) || [];
+	lines.push(`[${new Date().toISOString()}] ${message}`);
+	while (lines.length > 200) lines.shift();
+	liveLogs.set(project, lines);
+}
 
 function resolveAppPath(project) {
 	const candidates = [
@@ -187,6 +197,13 @@ function stopAppProcess(project) {
 		existing.kill("SIGINT");
 	}
 	appProcesses.delete(project);
+	const backend = backendProcesses.get(project);
+	if (backend && !backend.killed) {
+		backend.kill("SIGINT");
+	}
+	backendProcesses.delete(project);
+	liveStatus.delete(project);
+	liveLogs.delete(project);
 }
 
 process.on("exit", () => {
@@ -194,6 +211,107 @@ process.on("exit", () => {
 		stopAppProcess(project);
 	}
 });
+
+async function ensureNodeModules(project, cwd) {
+	const nodeModulesPath = path.join(cwd, "node_modules");
+	if (fs.existsSync(nodeModulesPath)) {
+		appendLog(project, `Dependencies already installed at ${cwd}`);
+		return;
+	}
+	appendLog(project, `Installing dependencies in ${cwd}...`);
+	await new Promise((resolveInstall, rejectInstall) => {
+		const install = spawn("npm", ["install"], {
+			cwd,
+			env: process.env,
+			stdio: "pipe",
+		});
+		install.stdout.on("data", (d) => appendLog(project, d.toString().trim()));
+		install.stderr.on("data", (d) => appendLog(project, d.toString().trim()));
+		install.on("exit", (code) => {
+			if (code === 0) return resolveInstall(true);
+			return rejectInstall(new Error(`npm install failed with code ${code}`));
+		});
+		install.on("error", rejectInstall);
+	});
+	appendLog(project, `Dependencies installed in ${cwd}`);
+}
+
+async function runCommand(project, cwd, command, args, options = {}) {
+	return new Promise((resolve, reject) => {
+		appendLog(project, `Running: ${command} ${args.join(" ")} (cwd: ${cwd})`);
+		const child = spawn(command, args, {
+			cwd,
+			env: { ...process.env, ...options.env },
+			stdio: "pipe",
+		});
+		child.stdout.on("data", (d) => appendLog(project, d.toString().trim()));
+		child.stderr.on("data", (d) => appendLog(project, d.toString().trim()));
+		child.on("exit", (code) => {
+			if (code === 0) return resolve(true);
+			return reject(new Error(`${command} exited with code ${code}`));
+		});
+		child.on("error", reject);
+	});
+}
+
+async function healthCheck(url, attempts = 20, delayMs = 500) {
+	for (let i = 0; i < attempts; i++) {
+		try {
+			const res = await fetch(url);
+			if (res.ok) return true;
+		} catch (e) {
+			// ignore
+		}
+		await new Promise((r) => setTimeout(r, delayMs));
+	}
+	return false;
+}
+
+async function startPreview(project, appPath, port) {
+	appendLog(project, `Starting preview on port ${port}...`);
+	const child = spawn("npm", ["run", "preview", "--", "--host", "--port", `${port}`], {
+		cwd: appPath,
+		env: {
+			...process.env,
+			PORT: port,
+		},
+		stdio: "pipe",
+		detached: true,
+	});
+	child.stdout.on("data", (d) => appendLog(project, d.toString().trim()));
+	child.stderr.on("data", (d) => appendLog(project, d.toString().trim()));
+	appProcesses.set(project, child);
+	child.unref();
+	child.on("exit", () => {
+		appendLog(project, "Preview process exited");
+		appProcesses.delete(project);
+	});
+	return child.pid;
+}
+
+async function startBackend(project, projectRoot) {
+	const backendPath = path.join(projectRoot, "backend");
+	if (!fs.existsSync(path.join(backendPath, "package.json"))) {
+		appendLog(project, "No backend package.json found; skipping backend start");
+		return null;
+	}
+	await ensureNodeModules(project, backendPath);
+	const child = spawn("npm", ["run", "dev"], {
+		cwd: backendPath,
+		env: process.env,
+		stdio: "pipe",
+		detached: true,
+	});
+	child.stdout.on("data", (d) => appendLog(project, `[backend] ${d.toString().trim()}`));
+	child.stderr.on("data", (d) => appendLog(project, `[backend] ${d.toString().trim()}`));
+	backendProcesses.set(project, child);
+	child.unref();
+	child.on("exit", () => {
+		appendLog(project, "Backend process exited");
+		backendProcesses.delete(project);
+	});
+	return child.pid;
+}
 
 // -------------------------------------------------------- SERVER REST API PATHS ------------------------
 
@@ -339,6 +457,104 @@ app.post("/api/projects/:project/start-app", async (req, res) => {
 		res.status(500).json({
 			error: error?.message || "failed to start app",
 		});
+	}
+});
+
+app.post("/api/projects/:project/live/stop", (req, res) => {
+	const { project } = req.params || {};
+	if (!project) {
+		return res.status(400).json({ error: "project is required" });
+	}
+	stopAppProcess(project);
+	appendLog(project, "Stopped live preview/backend");
+	res.status(200).json({ status: "stopped" });
+});
+
+app.get("/api/projects/:project/live/status", (req, res) => {
+	const { project } = req.params || {};
+	if (!project) {
+		return res.status(400).json({ error: "project is required" });
+	}
+	const status = liveStatus.get(project) || { status: "idle" };
+	const logs = liveLogs.get(project) || [];
+	res.status(200).json({ ...status, logs });
+});
+
+app.post("/api/projects/:project/live/deploy", async (req, res) => {
+	const { project } = req.params || {};
+	const port = req.body?.port || 5173;
+	const startBackendFlag = !!req.body?.backend;
+	if (!project) {
+		return res.status(400).json({ error: "project is required" });
+	}
+	const appPath = resolveAppPath(project);
+	if (!appPath) {
+		return res.status(404).json({
+			error: `app not found under ${EXPORT_APPS_ROOT}/${project}`,
+		});
+	}
+
+	try {
+		stopAppProcess(project);
+		appendLog(project, "Starting live deploy...");
+		liveStatus.set(project, {
+			status: "starting",
+			port,
+			appPath,
+			pid: null,
+			backendPid: null,
+			error: null,
+		});
+
+		await ensureNodeModules(project, appPath);
+		liveStatus.set(project, { ...liveStatus.get(project), status: "building" });
+		await runCommand(project, appPath, "npm", ["run", "build"]);
+		appendLog(project, "Build completed.");
+
+		let backendPid = null;
+		if (startBackendFlag) {
+			appendLog(project, "Starting backend...");
+			backendPid = await startBackend(project, path.dirname(appPath));
+		}
+
+		liveStatus.set(project, { ...liveStatus.get(project), status: "starting", backendPid });
+		const pid = await startPreview(project, appPath, port);
+		liveStatus.set(project, { ...liveStatus.get(project), pid });
+
+		const ready = await healthCheck(`http://localhost:${port}`);
+		if (!ready) {
+			liveStatus.set(project, { ...liveStatus.get(project), status: "error", error: "preview did not become ready" });
+			return res.status(500).json({ error: "preview did not become ready" });
+		}
+
+		liveStatus.set(project, {
+			status: "ready",
+			port,
+			appPath,
+			pid,
+			backendPid,
+			error: null,
+		});
+		appendLog(project, `Live preview ready on http://localhost:${port}`);
+		return res.status(200).json({
+			status: "ready",
+			port,
+			pid,
+			backendPid,
+			appPath,
+			logs: liveLogs.get(project) || [],
+		});
+	} catch (error) {
+		appendLog(project, `Deploy failed: ${error?.message || "unknown error"}`);
+		liveStatus.set(project, {
+			status: "error",
+			port,
+			appPath,
+			pid: null,
+			backendPid: null,
+			error: error?.message || "deploy failed",
+		});
+		return res.status(500).json({ error: error?.message || "deploy failed" });
 	}
 });
 

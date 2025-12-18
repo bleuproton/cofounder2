@@ -2,7 +2,7 @@ import React, { useCallback, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Link } from "react-router-dom";
 
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { resetProject } from "@/store/main";
 
 import Flow from "@/components/views/flow.tsx";
@@ -28,6 +28,15 @@ const Project: React.FC = () => {
 	const [startError, setStartError] = useState("");
 	const [startMessage, setStartMessage] = useState("");
 	const [startLogs, setStartLogs] = useState<string[]>([]);
+	const [liveStatus, setLiveStatus] = useState<{
+		status?: string;
+		port?: number;
+		pid?: number;
+		backendPid?: number;
+		appPath?: string;
+		error?: string;
+		logs?: string[];
+	}>({});
 
 	const [initialLoad, setInitialLoad] = useState(false);
 
@@ -62,41 +71,72 @@ const Project: React.FC = () => {
 	}, [WEBAPP_LOCAL_URL]);
 
 	useEffect(() => {
-		if (tab === "blueprint") {
-			const checkPingServer = async () => {
-				try {
-					const response = await fetch(`${SERVER_LOCAL_URL}/ping`);
-					if (response.ok) {
-						setPingServer(true);
-					} else {
-						setPingServer(false);
-					}
-				} catch (error) {
+		const checkPingServer = async () => {
+			try {
+				const response = await fetch(`${SERVER_LOCAL_URL}/ping`);
+				if (response.ok) {
+					setPingServer(true);
+				} else {
 					setPingServer(false);
 				}
-				setPingServerChecked(true);
-			};
+			} catch (error) {
+				setPingServer(false);
+			}
+			setPingServerChecked(true);
+		};
 
+		if (!pingServerChecked) {
 			checkPingServer();
 		}
 		if (tab === "live") {
 			checkPingApp();
 		}
-	}, [tab, checkPingApp]);
+	}, [tab, checkPingApp, pingServerChecked]);
+
+	const fetchLiveStatus = useCallback(async () => {
+		if (!project) return;
+		try {
+			const res = await fetch(`${SERVER_LOCAL_URL}/projects/${project}/live/status`);
+			if (!res.ok) return;
+			const data = await res.json();
+			setLiveStatus(data || {});
+			if (Array.isArray(data?.logs)) {
+				setStartLogs(data.logs);
+			}
+			if (data?.status === "ready") {
+				setPingApp(true);
+			}
+			if (data?.status === "error") {
+				setStartError(data?.error || "deploy error");
+			}
+		} catch (e) {
+			// ignore poll errors
+		}
+	}, [SERVER_LOCAL_URL, project]);
+
+	useEffect(() => {
+		if (tab !== "live") return;
+		fetchLiveStatus();
+		const interval = setInterval(() => {
+			fetchLiveStatus();
+			checkPingApp();
+		}, 3000);
+		return () => clearInterval(interval);
+	}, [tab, fetchLiveStatus, checkPingApp]);
 
 	const startApp = useCallback(async () => {
 		if (!project) return;
 		setStartingApp(true);
 		setStartError("");
 		setStartMessage("");
-		setStartLogs((prev) => [...prev, "Starting local dev server..."]);
+		setStartLogs(["Building and starting live preview..."]);
 		try {
-			const response = await fetch(`${SERVER_LOCAL_URL}/projects/${project}/start-app`, {
+			const response = await fetch(`${SERVER_LOCAL_URL}/projects/${project}/live/deploy`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ port: 5173 }),
+				body: JSON.stringify({ port: 5173, backend: false }),
 			});
 			const data = await response.json();
 			if (!response.ok) {
@@ -109,22 +149,28 @@ const Project: React.FC = () => {
 				`PID: ${data?.pid || "n/a"}`,
 				"Waiting for server to become reachable...",
 			]);
-			// Poll for availability
-			for (let i = 0; i < 20; i++) {
-				await new Promise((r) => setTimeout(r, 500));
-				const ok = await checkPingApp();
-				if (ok) break;
-			}
-			if (pingApp) {
-				setStartLogs((prev) => [...prev, "App is reachable."]);
-			}
+			await fetchLiveStatus();
+			await checkPingApp();
 		} catch (error) {
 			setStartError(error?.message || "failed to start app");
 			setStartLogs((prev) => [...prev, `Error: ${error?.message || "unknown error"}`]);
 		} finally {
 			setStartingApp(false);
 		}
-	}, [SERVER_LOCAL_URL, checkPingApp, project]);
+	}, [SERVER_LOCAL_URL, checkPingApp, fetchLiveStatus, project]);
+
+	const stopApp = useCallback(async () => {
+		if (!project) return;
+		try {
+			await fetch(`${SERVER_LOCAL_URL}/projects/${project}/live/stop`, {
+				method: "POST",
+			});
+			setLiveStatus({ status: "stopped" });
+			setPingApp(false);
+		} catch (e) {
+			// ignore
+		}
+	}, [SERVER_LOCAL_URL, project]);
 
 	if (!pingServerChecked) return <></>;
 	return (
@@ -272,13 +318,28 @@ const Project: React.FC = () => {
 													Launch the exported app dev server for this project directly from the UI.
 												</p>
 												<div className="flex flex-col gap-2">
-													<Button
-														disabled={startingApp}
-														onClick={startApp}
-														className="mx-auto w-full sm:w-auto"
-													>
-														{startingApp ? "Starting..." : "Start local dev server"}
-													</Button>
+													{liveStatus?.status && (
+														<p className="text-xs text-[#b8b8c2]">
+															Status: {liveStatus.status}
+															{liveStatus.port ? ` (port ${liveStatus.port})` : ""}
+														</p>
+													)}
+													<div className="flex flex-col sm:flex-row gap-2 justify-center">
+														<Button
+															disabled={startingApp}
+															onClick={startApp}
+															className="mx-auto w-full sm:w-auto"
+														>
+															{startingApp ? "Starting..." : "Build & Start live"}
+														</Button>
+														<Button
+															variant="secondary"
+															onClick={stopApp}
+															className="mx-auto w-full sm:w-auto"
+														>
+															Stop live
+														</Button>
+													</div>
 													{startMessage && (
 														<p className="text-emerald-300 text-xs">{startMessage}</p>
 													)}
@@ -298,7 +359,7 @@ const Project: React.FC = () => {
 													)}
 												</div>
 												<p className="text-xs text-[#80808f] whitespace-pre-wrap">
-													{`Either the Vite server is not running (apps/${project}) or there is an issue in app root/store/view. Dependencies are installed automatically if missing.`}
+													{`Click "Build & Start live" to install deps if missing, build, and launch the local preview (apps/${project}/vitereact). Use "Stop live" to shut it down.`}
 												</p>
 											</div>
 										</div>
